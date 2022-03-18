@@ -5,6 +5,8 @@ from typing import Tuple
 from numpy import array 
 import matplotlib.pyplot as plt 
 
+from math_utils import log_stable
+
 class Simulation:
 
     def __init__(self, G: Graph, initial_posteriors = None, initial_spins = None):
@@ -21,21 +23,27 @@ class Simulation:
 
     def get_log_precision(self, po : float, ps: float) -> Tuple[float, float, float, float]:
         "calculate these in advance for quick use in VFE calculations"
-        logpo = np.log(po)
-        logps = np.log(ps)
-        logpo_C = np.log(1-po)
-        logps_C = np.log(1-ps)
+        self.logpo = log_stable(po)
+        self.logps = log_stable(ps)
+        self.logpo_C = log_stable(1.-po)
+        self.logps_C = log_stable(1.-ps)
 
-        return logpo, logps, logpo_C, logps_C
+        return self.logpo, self.logps, self.logpo_C, self.logps_C
 
-    def get_hist_array(self, T: int) -> Tuple[array, array, array, array, array, array]:
-        hist = np.zeros((self.N, T) )
-        return hist, hist, hist, hist , hist, hist
+    # def get_hist_array(self, T: int) -> Tuple[array, array, array, array, array, array]:
+    def get_hist_array(self, T: int) -> Tuple[array, array]:
+
+        spin_hist = np.empty((self.N, T) )
+        phi_hist = np.empty((self.N, T) )
+        return spin_hist, phi_hist
+
+        # hist = np.zeros((self.N, T) )
+        # return hist, hist, hist, hist, hist, hist
 
     def calculate_spins(self, spin_state: float) -> Tuple[array, array, array]:
         sum_down_spins = self.A @ spin_state # this sums up the neighbours that are DOWN, per agent
-        down_spins = np.absolute(spin_state - 1) # converts from 1.0 meaning DOWN to 1.0 meaning UP
-        sum_up_spins = self.A @ down_spins # this sums up the neighbours that are UP, per agent
+        up_spins = np.absolute(spin_state - 1) # converts from 1.0 meaning DOWN to 1.0 meaning UP
+        sum_up_spins = self.A @ up_spins # this sums up the neighbours that are UP, per agent
         spin_diffs = sum_down_spins - sum_up_spins # difference in DOWNs vs UPs, per agent
 
         return sum_down_spins, sum_up_spins, spin_diffs
@@ -60,14 +68,16 @@ class Simulation:
 
         return kld, accur
 
-    def run(self, T: int, po: float, ps: float) -> Tuple[array, array, array, array, array, array]:
+    # def run(self, T: int, po: float, ps: float) -> Tuple[array, array, array, array, array, array]:
+    def run(self, T: int, po: float, ps: float) -> Tuple[array, array]:
 
         # spin states -- 1.0 == DOWN, 0.0 == UP
         spin_state = self.initial_spins.copy()
 
         # posteriors
         phi = self.initial_posteriors.copy()
-        spin_hist, phi_hist, kld_hist, accur_hist, negH_hist, energy_hist = self.get_hist_array(T)
+        # spin_hist, phi_hist, kld_hist, accur_hist, negH_hist, energy_hist = self.get_hist_array(T)
+        spin_hist, phi_hist = self.get_hist_array(T)
 
         log_precisions = self.get_log_precision(po, ps)
 
@@ -84,18 +94,47 @@ class Simulation:
 
             # compute VFE for each agent (@NOTE: this could be computed outside this function, after the fact - probably should be done in order to speed things up)
 
-            # Decomposition 1: negative entropy - expected variational energy (uncomment below if you want to do this)
-            negH, neg_expected_energy = self.decompose_neg_entropy_eve(*log_precisions, phi, phi_C, sum_down_spins, sum_up_spins)
-            negH_hist[:,t] = negH
-            energy_hist[:,t] = -neg_expected_energy
+            # # Decomposition 1: negative entropy - expected variational energy (uncomment below if you want to do this)
+            # negH, neg_expected_energy = self.decompose_neg_entropy_eve(*log_precisions, phi, phi_C, sum_down_spins, sum_up_spins)
+            # negH_hist[:,t] = negH
+            # energy_hist[:,t] = -neg_expected_energy
 
-            # Decomposition 2: complexity - accuracy (uncomment below if you want to do this)
-            kld, accur = self.decompose_complexity_accuracy(*log_precisions, phi, phi_C, sum_down_spins, sum_up_spins)
+            # # Decomposition 2: complexity - accuracy (uncomment below if you want to do this)
+            # kld, accur = self.decompose_complexity_accuracy(*log_precisions, phi, phi_C, sum_down_spins, sum_up_spins)
 
-            kld_hist[:,t] = kld
-            accur_hist[:,t] = accur
+            # kld_hist[:,t] = kld
+            # accur_hist[:,t] = accur
 
-        return phi_hist, spin_hist, kld_hist, accur_hist, negH_hist, energy_hist
+        # return phi_hist, spin_hist, kld_hist, accur_hist, negH_hist, energy_hist
+        return phi_hist, spin_hist
+
+
+    def compute_VFE(self, phi_hist: array, spin_hist: array, decomposition: str = "entropy_energy") -> Tuple[array,array, array]:
+        """ 
+        Compute variational free energy for each agent and timepoint using an input history of beliefs and spins, and parameters of generative models
+        """
+        
+        phi_C_hist = 1. - phi_hist
+
+        down_hist, up_hist = spin_hist, np.absolute(spin_hist - 1.)
+        sum_down_spins_hist = self.A @ down_hist
+        sum_up_spins_hist = self.A @ up_hist
+
+        if decomposition == "entropy_energy":
+
+            negH = phi_hist * log_stable(phi_hist) + phi_C_hist * log_stable(phi_C_hist)
+            expected_energy = - (phi_hist * (sum_down_spins_hist * self.logpo + sum_up_spins_hist*self.logpo_C + self.logps) + phi_C_hist*(sum_up_spins_hist*self.logpo + sum_down_spins_hist*self.logpo_C + self.logps_C))
+
+            vfe = negH + expected_energy
+            return vfe, negH, expected_energy
+
+        if decomposition == "complexity_accuracy":
+
+            complexity = phi_hist * (log_stable(phi_hist) - self.logps) + phi_C_hist * (log_stable(phi_C_hist) - self.logps_C)
+            neg_accur = -(phi_hist * (sum_down_spins_hist*self.logpo + sum_up_spins_hist*self.logpo_C) + phi_C_hist*(sum_up_spins_hist*self.logpo + sum_down_spins_hist*self.logpo_C))
+
+            vfe = complexity + neg_accur
+            return vfe, complexity, neg_accur
 
     def calculate_average_metric(self, hist: array) -> array:
         return hist.mean(axis = 0)
