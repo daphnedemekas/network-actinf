@@ -5,7 +5,6 @@ import os
 import argparse
 import itertools
 
-import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 
