@@ -9,7 +9,12 @@ import networkx as nx
 N = 500 # number of nodes
 
 p = 0.01 # connection probability of ER graph
-G = nx.fast_gnp_random_graph(N, 0.01) # initialize ER graph
+
+# avg_connected = 0.
+# n_iter = 1000
+# for _ in range(n_iter):
+#     G = nx.fast_gnp_random_graph(N, 0.01) # initialize ER graph
+#     avg_connected += float(nx.is_connected(G))/n_iter
 
 # k = 4 # number of links in WS graph
 # p = 0. # re-wiring probability in WS graph
@@ -63,8 +68,8 @@ def run_simulation(T, initial_spins, initial_posteriors, A, po, ps):
 
         sum_down_spins = A @ spin_state # this sums up the neighbours that are DOWN, per agent
 
-        down_spins = np.absolute(spin_state - 1) # converts from 1.0 meaning DOWN to 1.0 meaning UP
-        sum_up_spins = A @ down_spins # this sums up the neighbours that are UP, per agent
+        up_spins = np.absolute(spin_state - 1) # converts from 1.0 meaning DOWN to 1.0 meaning UP
+        sum_up_spins = A @ up_spins # this sums up the neighbours that are UP, per agent
 
         spin_diffs = sum_down_spins - sum_up_spins # difference in DOWNs vs UPs, per agent
 
@@ -102,6 +107,16 @@ def run_simulation(T, initial_spins, initial_posteriors, A, po, ps):
     # return phi_hist, spin_hist, negH_hist, energy_hist
     return phi_hist, spin_hist, kld_hist, accur_hist
 
+# %%
+
+# initialization option 2: sample random posteriors in [0, 1] and then get initial spin-states/posteriors by threshold the posteriors (arg-maxing action-selection, essentially)
+initial_posteriors = np.random.rand(N) # posterior is belief about belign in down state
+initial_spins = (initial_posteriors > 0.5).astype(float) # if spin == 1, you're in a DOWN spin, otherwise, you're in an UP sstate
+
+# G = nx.fast_gnp_random_graph(N, 0.01)
+# A = nx.to_numpy_array(G)
+phi_hist, spin_hist, _,_ = run_simulation(1000, initial_spins, initial_posteriors, A, 0.99, 0.5)
+plt.imshow(spin_hist, aspect = 'auto', interpolation = 'none', cmap = 'gray')
 
 # %% Plot heatmaps of "spiking" activity in terms of DOWN/UP states
 
