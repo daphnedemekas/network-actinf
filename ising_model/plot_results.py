@@ -66,7 +66,7 @@ for cond_folder_i in os.listdir(results_folder):
 # measure_idx_mapping = {0: 'Average VFE', 1: 'Average complexity', 2: 'Average neg. accuracy', 3: 'Average polarization', 4:'Average branching parameter'}
 measure_idx_mapping = {0: 'Average VFE', 1: 'Average complexity', 2: 'Average neg. accuracy', 4:'Average branching parameter'}
 
-fig, axes = plt.subplots(nrows = 2, ncols = 2, sharex = True, figsize = (16, 12))
+fig, axes = plt.subplots(nrows = 2, ncols = 2, sharex = False, figsize = (16, 12))
 for ER_p_idx, ER_p in enumerate(ER_p_levels):
 
     subplot_counter = 0
@@ -86,6 +86,9 @@ for ER_p_idx, ER_p in enumerate(ER_p_levels):
             up_to = nan_idx[0]
         else:
             up_to = len(po_levels)
+
+        if measure_name == "Average VFE" or  measure_name == "Average neg. accuracy":
+            up_to = 40
         axes.flatten()[subplot_counter].fill_between(po_levels[:up_to], mean_val[:up_to] + sems[:up_to], mean_val[:up_to] - sems[:up_to], alpha = 0.4)
         axes.flatten()[subplot_counter].plot(po_levels[:up_to], mean_val[:up_to], lw = 1, label = "$p = $%.2f"%(ER_p_levels[ER_p_idx]))
 
