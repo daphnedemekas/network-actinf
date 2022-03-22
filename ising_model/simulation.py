@@ -135,6 +135,19 @@ class Simulation:
 
             vfe = complexity + neg_accur
             return vfe, complexity, neg_accur
+    
+    def compute_m(self, activity_tseries: array) -> array:
+
+        average_activity = self.calculate_average_metric(activity_tseries)
+
+        A_next = average_activity[1:]
+        A_past = average_activity[:-1]
+
+        A_past_centered = (A_past - A_past.mean())
+        numerator = (A_next - A_next.mean()).T @ A_past_centered
+        denominator = (A_past_centered**2).sum()
+
+        return numerator/denominator
 
     def calculate_average_metric(self, hist: array) -> array:
         return hist.mean(axis = 0)
