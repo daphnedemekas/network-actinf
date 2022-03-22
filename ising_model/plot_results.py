@@ -89,11 +89,14 @@ for ER_p_idx, ER_p in enumerate(ER_p_levels):
         axes.flatten()[subplot_counter].fill_between(po_levels[:up_to], mean_val[:up_to] + sems[:up_to], mean_val[:up_to] - sems[:up_to], alpha = 0.4)
         axes.flatten()[subplot_counter].plot(po_levels[:up_to], mean_val[:up_to], lw = 1, label = "$p = $%.2f"%(ER_p_levels[ER_p_idx]))
 
+        axes.flatten()[subplot_counter].set_xlabel("$p_{\mathcal{O}}$", fontsize = 18)
 
         if subplot_counter == 1:
-            axes.flatten()[subplot_counter].legend(loc=(1.01, 0.01), ncol=3, fontsize = 18)
-        axes.flatten()[subplot_counter].set_title("%s as $p_{\mathcal{O}}$"%(measure_name))
+            axes.flatten()[subplot_counter].legend(loc=(1.01, 0.01), ncol=4, fontsize = 20)
+        axes.flatten()[subplot_counter].set_title("%s as $p_{\mathcal{O}}$"%(measure_name), fontsize = 20)
 
         subplot_counter += 1
+
+fig.savefig('ERconn_vs_po_sweep1.pdf', dpi = 325, bbox_inches='tight')
 
 # %%
