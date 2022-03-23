@@ -27,11 +27,14 @@ def run_sweep(param_combos, num_trials, T, run_name):
         avg_neg_accur_per_trial = np.empty(num_trials)
         avg_polarization_per_trial = np.empty(num_trials)
         avg_m_per_trial = np.empty(num_trials)
+        adj_mat_per_trial = np.zeros((N,N, num_trials))
 
         for trial_i in range(num_trials):
             G = gen_funcs[graph_str](N, p) 
 
             sim = Simulation(G)
+
+            adj_mat_per_trial[:,:,trial_i] = sim.A
 
             phi_hist, spin_hist = sim.run(T, po, ps)
 
@@ -43,14 +46,15 @@ def run_sweep(param_combos, num_trials, T, run_name):
             avg_polarization_per_trial[trial_i] = phi_hist[:,100:].mean() # exclude transient
             avg_m_per_trial[trial_i] = sim.compute_m(phi_hist[:,100:])
 
-            results_dict = {'avg_vfe_per_trial': avg_vfe_per_trial,
-                            'avg_complexity_per_trial': avg_complexity_per_trial,
-                            'avg_neg_accur_per_trial': avg_neg_accur_per_trial,
-                            'avg_polarization_per_trial': avg_polarization_per_trial,
-                            'avg_m_per_trial': avg_m_per_trial,
-                            'N': N, 
-                            'p': p, 
-                            'po':po}
+        results_dict = {'avg_vfe_per_trial': avg_vfe_per_trial,
+                        'avg_complexity_per_trial': avg_complexity_per_trial,
+                        'avg_neg_accur_per_trial': avg_neg_accur_per_trial,
+                        'avg_polarization_per_trial': avg_polarization_per_trial,
+                        'avg_m_per_trial': avg_m_per_trial,
+                        'adj_mat_per_trial': adj_mat_per_trial,
+                        'N': N, 
+                        'p': p, 
+                        'po':po}
 
         with open(os.path.join(param_folder, "results.pkl"), 'wb') as output:
             # Pickle dictionary using protocol 0.
