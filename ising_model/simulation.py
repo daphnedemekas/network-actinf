@@ -4,16 +4,24 @@ from networkx import Graph
 from typing import Tuple
 from numpy import array 
 import matplotlib.pyplot as plt 
+import itertools as it
 
 from math_utils import log_stable
 
 class Simulation:
 
-    def __init__(self, G: Graph, initial_posteriors = None, initial_spins = None):
+    def __init__(self, G: Graph, omega_matrix: array = None, p_s_vec: array = None, initial_posteriors = None, initial_spins = None):
         self.network = G
 
         self.A = nx.to_numpy_array(G)
         self.N = G.number_of_nodes()
+
+        self.W = log_stable((1. - omega_matrix) / omega_matrix)
+        # self.W = log_stable(omega_matrix / (1. - omega_matrix))
+
+        self.W = self.W * self.A # remove 0 edges, including self-loops
+    
+        self.theta = log_stable( (1. - p_s_vec) /p_s_vec )
         if not initial_posteriors:
             initial_posteriors = np.random.rand(self.N) # posterior is belief about belign in down state
         self.initial_posteriors = initial_posteriors
@@ -47,14 +55,68 @@ class Simulation:
         spin_diffs = sum_down_spins - sum_up_spins # difference in DOWNs vs UPs, per agent
 
         return sum_down_spins, sum_up_spins, spin_diffs
+    
+    def compute_energy_differences(self, spin_state: array):
 
-    def sample_spin_state(self, ps: float, po: float, spin_diffs: array) -> Tuple[float, float, float]:
-        # equivalent expressions
-        # x = ((ps - 1.) * (((1./po) - 1.)**spin_diffs)) / ps
-        x = (1. - (1./ps)) * ((1. - po)/po)**(spin_diffs)
-        phi = 1. / (1. - x)
+        spins_signed = 2 * (spin_state) - 1. # convert from +1, 0 --> +1, -1
+        neg_delta_E = self.W @ spins_signed + self.theta
+
+        return neg_delta_E
+
+    def compute_posterior(self, neg_delta_E: array) -> array:
+
+        phi = 1. / (1. + np.exp(neg_delta_E))
+
+        return phi
+    
+    def sample_spin_state(self, phi: array) -> array:
+
         spin_state = (phi > np.random.rand(self.N)).astype(float)
-        return phi, 1. - phi, spin_state
+
+        return spin_state
+
+    def calculate_boltzmann_energy(self, spin_state: array) -> float:
+        spins_signed = 2 * (spin_state) - 1. # convert from +1, 0 --> +1, -1
+        pairwise_sum = 0.5 * (spins_signed.T @ self.W @ spins_signed)
+        E = -(pairwise_sum + spin_state @ self.theta)
+
+        return E
+
+    def run_modified(self, T: int) -> Tuple[array, array]:
+
+        # spin states -- 1.0 == DOWN, 0.0 == UP
+        spin_state = self.initial_spins.copy()
+
+        # posteriors
+        phi = self.initial_posteriors.copy()
+        # spin_hist, phi_hist, kld_hist, accur_hist, negH_hist, energy_hist = self.get_hist_array(T)
+        spin_hist, phi_hist = self.get_hist_array(T)
+
+        for t in range(T):
+
+            neg_delta_E = self.compute_energy_differences(spin_state)
+
+            phi = self.compute_posterior(neg_delta_E)
+
+            spin_state = self.sample_spin_state(phi)
+
+            # store histories of spin states and posteriors
+            spin_hist[:,t] = spin_state.copy()
+            phi_hist[:,t] = phi.copy()
+
+        return phi_hist, spin_hist
+
+
+
+
+
+    # def sample_spin_state(self, ps: float, po: float, spin_diffs: array) -> Tuple[float, float, float]:
+    #     # equivalent expressions
+    #     # x = ((ps - 1.) * (((1./po) - 1.)**spin_diffs)) / ps
+    #     x = (1. - (1./ps)) * ((1. - po)/po)**(spin_diffs)
+    #     phi = 1. / (1. - x)
+    #     spin_state = (phi > np.random.rand(self.N)).astype(float)
+    #     return phi, 1. - phi, spin_state
 
     def decompose_neg_entropy_eve(self, logpo: float, logps: float, logpo_C: float, logps_C: float, phi: float, phi_C: float, sum_down_spins: array, sum_up_spins: array) -> Tuple[float, float]:
         negH = phi * np.log(phi + 1e-16) + phi_C * np.log(phi_C + 1e-16)
