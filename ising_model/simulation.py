@@ -6,7 +6,7 @@ from numpy import array
 import matplotlib.pyplot as plt
 import itertools as it
 
-from math_utils import log_stable
+from math_utils import log_stable, compute_exp_normalizing
 
 
 class Simulation:
@@ -23,9 +23,10 @@ class Simulation:
         self.A = nx.to_numpy_array(G)
         self.N = G.number_of_nodes()
 
-        self.W = log_stable((1.0 - omega_matrix) / omega_matrix)
-
-        self.W = self.W * self.A  # remove 0 edges, including self-loops
+        if omega_matrix:
+            self.W = log_stable((1.0 - omega_matrix) / omega_matrix)
+            self.W = self.W * self.A  # remove 0 edges, including self-loops
+            
 
         self.theta = log_stable((1.0 - p_s_vec) / p_s_vec)
         if not initial_posteriors:
@@ -269,6 +270,30 @@ def plot_regimes(regimes: list, po_vec=None, ps_vec=None):
 
 
 class SimulationNP(Simulation):
+
+    def __init__(self, 
+                G, 
+                k_matrix, 
+                omega_matrix = None,
+                init_scale = 0.7,
+                p_s_vec: array = None,
+                initial_posteriors=None,
+                initial_spins=None,
+                learning_rate = 0.1,
+            ):
+        super().__init__(G = G, omega_matrix = omega_matrix, p_s_vec = p_s_vec, initial_posteriors = initial_posteriors, initial_spins= initial_spins)
+        self.k_matrix = k_matrix
+
+        if omega_matrix is None:
+            self.omega_matrix = init_scale * np.ones(k_matrix.shape)
+
+        # self.omega_matrix = np.exp(k_matrix * omega_matrix) / (np.exp(k_matrix * omega_matrix) + np.exp(k_matrix * (1. - omega_matrix))) 
+        self.update_W()
+
+        self.omega_matrix = self.omega_matrix * self.A
+
+        self.learning_rate = learning_rate
+
     def compute_energy_differences(self, spin_state: array):
 
         spins_signed = 2 * (spin_state) - 1.0  # convert from +1, 0 --> +1, -1
@@ -288,6 +313,35 @@ class SimulationNP(Simulation):
 
         return spin_state
 
+    def update_K(self, phi,spin_state):
+
+        xi = 2*spin_state - 1
+
+        exp_term = compute_exp_normalizing(self.omega_matrix, self.k_matrix)
+
+        phi_col_vec = phi[...,None]
+        dfdk = xi*(2 * phi_col_vec * self.omega_matrix - phi_col_vec  - self.omega_matrix) + exp_term
+
+        dfdk *= self.A
+
+        new_K_matrix = self.k_matrix - self.learning_rate * dfdk
+
+        self.k_matrix = new_K_matrix
+
+        return new_K_matrix
+        
+    def update_W(self):
+
+        self.W = self.k_matrix*(1-self.omega_matrix) - self.k_matrix*self.omega_matrix
+
+        return self.W
+
+    def get_hist_array(self, T):
+        spin_hist = np.empty((self.N, T))
+        phi_hist = np.empty((self.N, T))
+        k_matrix_hist = np.empty((self.N, self.N, T))
+        return spin_hist, phi_hist, k_matrix_hist
+
     def run(self, T: int) -> Tuple[array, array]:
 
         # spin states -- 1.0 == DOWN, 0.0 == UP
@@ -296,7 +350,7 @@ class SimulationNP(Simulation):
         # posteriors
         phi = self.initial_posteriors.copy()
         # spin_hist, phi_hist, kld_hist, accur_hist, negH_hist, energy_hist = self.get_hist_array(T)
-        spin_hist, phi_hist = self.get_hist_array(T)
+        spin_hist, phi_hist, k_matrix_hist = self.get_hist_array(T)
 
         for t in range(T):
 
@@ -306,8 +360,13 @@ class SimulationNP(Simulation):
 
             spin_state = self.sample_spin_state(phi)
 
+            new_k_matrix = self.update_K(phi, spin_state)
+
+            new_W_matrix = self.update_W()
+            
             # store histories of spin states and posteriors
             spin_hist[:, t] = spin_state.copy()
             phi_hist[:, t] = phi.copy()
+            k_matrix_hist[:, :, t] = new_k_matrix.copy()
 
-        return phi_hist, spin_hist
+        return phi_hist, spin_hist, k_matrix_hist
