@@ -3,20 +3,36 @@ import random
 import matplotlib.pyplot as plt
 from config import graph_generation_fns as gen_funcs
 
-def create_network_dict(network_params = {"ER" : {"n":100, "p":0.01},
-                                          "circular_ladder":  {"n":100}, 
-                                          "grid" : {"dim":[10,10]}, 
-                                          "ws" : {"n":100, "k": 4, "p":0.0}}
-                                          ):
-    """ 
+
+def create_network_dict(
+    network_params={
+        "ER": {"n": 100, "p": 0.01},
+        "circular_ladder": {"n": 100},
+        "grid": {"dim": [10, 10]},
+        "ws": {"n": 100, "k": 4, "p": 0.0},
+    }
+):
+    """
     Create a dictionary containing networkx graph objects, whose class and parameterisation is stored in an input dictionary `network_params`
     """
 
-    network_dict = {network_name: gen_funcs[network_name](**params) for network_name, params in network_params.items()}
+    network_dict = {
+        network_name: gen_funcs[network_name](**params)
+        for network_name, params in network_params.items()
+    }
 
     return network_dict
 
-def create_networks(network_params ={"ER_sparse" : {"n":100, "p":0.01}, "ER_dense":  {"n":100, "p":0.3}, "circular_ladder":  {"n":100}, "grid" : {"dim":[10,10]}, "ws" : {"n":100, "k": 4, "p":0.0}}):
+
+def create_networks(
+    network_params={
+        "ER_sparse": {"n": 100, "p": 0.01},
+        "ER_dense": {"n": 100, "p": 0.3},
+        "circular_ladder": {"n": 100},
+        "grid": {"dim": [10, 10]},
+        "ws": {"n": 100, "k": 4, "p": 0.0},
+    }
+):
     networks = {}
     network_names = network_params.keys()
     if "ER_sparse" in network_names:
@@ -42,9 +58,10 @@ def create_networks(network_params ={"ER_sparse" : {"n":100, "p":0.01}, "ER_dens
 
     return networks
 
-def draw_networks(networks, node_size = 20):
+
+def draw_networks(networks, node_size=20):
     for network_name, network in networks.items():
         plt.figure()
         plt.title(network_name)
-        nx.draw(network,node_size= node_size)
+        nx.draw(network, node_size=node_size)
         plt.show()
