@@ -77,6 +77,12 @@ class Simulation:
         return sum_down_spins, sum_up_spins, spin_diffs
 
     def calculate_global_energy(self, spin_state: array) -> float:
+        """
+        @NOTE: This calculation seems like it's calculating the negative energy, but
+        that's just because we're actually computing the log likelhiood ratios with fliipped signs,
+        e.g. as W(i,j) = log[ (1-omega(i,j)) / omega(i,j)], which is actually -W(i,j). THat's why you (Conor) were
+        getting these counter-intuitive weird energy function results. 28.04.2022
+        """
 
         # the signing of the spins doesn't matter
         # spins_signed = 2 * (spin_state) - 1.0  # convert from +1, 0 --> +1, -1 #
@@ -90,7 +96,7 @@ class Simulation:
         # if all couplings all the same (there's one single "p_{\mathcal{O}}") , you can do this instead
         coupling = self.logpo_C - self.logpo 
         pairwise_sum = coupling * 0.5 * ((spins_signed[...,None] * spins_signed) * self.A).flatten().sum()
-        E = -(pairwise_sum + (spins_signed * self.theta).sum())
+        E = (pairwise_sum + (spins_signed * self.theta).sum())
 
         return E
 
