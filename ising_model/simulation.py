@@ -23,11 +23,10 @@ class Simulation:
         self.A = nx.to_numpy_array(G)
         self.N = G.number_of_nodes()
 
-        if omega_matrix:
+        if omega_matrix is not None:
             self.W = log_stable((1.0 - omega_matrix) / omega_matrix)
             self.W = self.W * self.A  # remove 0 edges, including self-loops
             
-
         self.theta = log_stable((1.0 - p_s_vec) / p_s_vec)
         if not initial_posteriors:
             initial_posteriors = np.random.rand(
@@ -77,10 +76,21 @@ class Simulation:
 
         return sum_down_spins, sum_up_spins, spin_diffs
 
-    def calculate_boltzmann_energy(self, spin_state: array) -> float:
-        spins_signed = 2 * (spin_state) - 1.0  # convert from +1, 0 --> +1, -1
-        pairwise_sum = 0.5 * (spins_signed.T @ self.W @ spins_signed)
-        E = -(pairwise_sum + spin_state @ self.theta)
+    def calculate_global_energy(self, spin_state: array) -> float:
+
+        # the signing of the spins doesn't matter
+        # spins_signed = 2 * (spin_state) - 1.0  # convert from +1, 0 --> +1, -1 #
+        spins_signed = 2 * (np.absolute(spin_state - 1.0)) - 1.0 #  @NOTE: I think we assume 1.0 ==> -1, so this needs to flip to this expression
+        
+        # don't use this because in the file `plot_VFE_with_H.py` we're using just the older, homogeneous po formulation
+        # this version is when you have the weights defined in self.W
+        # spins_signed = spin_state
+        # pairwise_sum = 0.5 * (spins_signed.T @ self.W @ spins_signed)
+
+        # if all couplings all the same (there's one single "p_{\mathcal{O}}") , you can do this instead
+        coupling = self.logpo_C - self.logpo 
+        pairwise_sum = coupling * 0.5 * ((spins_signed[...,None] * spins_signed) * self.A).flatten().sum()
+        E = -(pairwise_sum + (spins_signed * self.theta).sum())
 
         return E
 
@@ -156,18 +166,6 @@ class Simulation:
             spin_hist[:, t] = spin_state.copy()
             phi_hist[:, t] = phi.copy()
 
-            # compute VFE for each agent (@NOTE: this could be computed outside this function, after the fact - probably should be done in order to speed things up)
-
-            # # Decomposition 1: negative entropy - expected variational energy (uncomment below if you want to do this)
-            # negH, neg_expected_energy = self.decompose_neg_entropy_eve(*log_precisions, phi, phi_C, sum_down_spins, sum_up_spins)
-            # negH_hist[:,t] = negH
-            # energy_hist[:,t] = -neg_expected_energy
-
-            # # Decomposition 2: complexity - accuracy (uncomment below if you want to do this)
-            # kld, accur = self.decompose_complexity_accuracy(*log_precisions, phi, phi_C, sum_down_spins, sum_up_spins)
-
-            # kld_hist[:,t] = kld
-            # accur_hist[:,t] = accur
 
         # return phi_hist, spin_hist, kld_hist, accur_hist, negH_hist, energy_hist
         return phi_hist, spin_hist
@@ -242,7 +240,6 @@ class Simulation:
 
         data = np.arange(T), A_t
         return data
-
 
 def plot_regimes(regimes: list, po_vec=None, ps_vec=None):
 
@@ -342,7 +339,7 @@ class SimulationNP(Simulation):
         k_matrix_hist = np.empty((self.N, self.N, T))
         return spin_hist, phi_hist, k_matrix_hist
 
-    def run(self, T: int) -> Tuple[array, array]:
+    def run(self, T: int) -> Tuple[array, array, array]:
 
         # spin states -- 1.0 == DOWN, 0.0 == UP
         spin_state = self.initial_spins.copy()
@@ -370,3 +367,28 @@ class SimulationNP(Simulation):
             k_matrix_hist[:, :, t] = new_k_matrix.copy()
 
         return phi_hist, spin_hist, k_matrix_hist
+    
+    def run_no_learning(self, T: int) -> Tuple[array, array]:
+
+        # spin states -- 1.0 == DOWN, 0.0 == UP
+        spin_state = self.initial_spins.copy()
+
+        # posteriors
+        phi = self.initial_posteriors.copy()
+        # spin_hist, phi_hist, kld_hist, accur_hist, negH_hist, energy_hist = self.get_hist_array(T)
+        spin_hist, phi_hist, _ = self.get_hist_array(T)
+
+        for t in range(T):
+
+            neg_delta_E = self.compute_energy_differences(spin_state)
+
+            phi = self.compute_posterior(neg_delta_E)
+
+            spin_state = self.sample_spin_state(phi)
+            
+            # store histories of spin states and posteriors
+            spin_hist[:, t] = spin_state.copy()
+            phi_hist[:, t] = phi.copy()
+
+
+        return phi_hist, spin_hist
