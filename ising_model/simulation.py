@@ -24,10 +24,10 @@ class Simulation:
         self.N = G.number_of_nodes()
 
         if omega_matrix is not None:
-            self.W = log_stable((1.0 - omega_matrix) / omega_matrix)
+            self.W = log_stable(omega_matrix/(1.0 - omega_matrix))
             self.W = self.W * self.A  # remove 0 edges, including self-loops
-            
-        self.theta = log_stable((1.0 - p_s_vec) / p_s_vec)
+
+        self.theta = log_stable(p_s_vec /(1.0 - p_s_vec))
         if not initial_posteriors:
             initial_posteriors = np.random.rand(
                 self.N
@@ -94,9 +94,9 @@ class Simulation:
         # pairwise_sum = 0.5 * (spins_signed.T @ self.W @ spins_signed)
 
         # if all couplings all the same (there's one single "p_{\mathcal{O}}") , you can do this instead
-        coupling = self.logpo_C - self.logpo 
+        coupling = self.logpo - self.logpo_C
         pairwise_sum = coupling * 0.5 * ((spins_signed[...,None] * spins_signed) * self.A).flatten().sum()
-        E = (pairwise_sum + (spins_signed * self.theta).sum())
+        E = -(pairwise_sum + (spins_signed * self.theta).sum())
 
         return E
 
@@ -300,9 +300,9 @@ class SimulationNP(Simulation):
     def compute_energy_differences(self, spin_state: array):
 
         spins_signed = 2 * (spin_state) - 1.0  # convert from +1, 0 --> +1, -1
-        neg_delta_E = self.W @ spins_signed + self.theta
+        delta_E = self.W @ spins_signed + self.theta
 
-        return neg_delta_E
+        return delta_E
 
     def compute_posterior(self, neg_delta_E: array) -> array:
 
@@ -357,7 +357,7 @@ class SimulationNP(Simulation):
 
         for t in range(T):
 
-            neg_delta_E = self.compute_energy_differences(spin_state)
+            neg_delta_E = -1 * self.compute_energy_differences(spin_state)
 
             phi = self.compute_posterior(neg_delta_E)
 
@@ -366,7 +366,7 @@ class SimulationNP(Simulation):
             new_k_matrix = self.update_K(phi, spin_state)
 
             new_W_matrix = self.update_W()
-            
+
             # store histories of spin states and posteriors
             spin_hist[:, t] = spin_state.copy()
             phi_hist[:, t] = phi.copy()

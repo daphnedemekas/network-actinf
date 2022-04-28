@@ -47,7 +47,7 @@ def run():
     ax[1,1].plot(hamiltonian[1:until_T])
     ax[1,1].set_title("Total energy (H)")
 
-    write_folder = '/Users/conor/Documents/Templeton/tmp_out'
+    write_folder = ''
     
     plt.savefig(os.path.join(write_folder, "tmp.png"), dpi=325, bbox_inches="tight")
 
