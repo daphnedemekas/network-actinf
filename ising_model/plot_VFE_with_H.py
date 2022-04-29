@@ -6,6 +6,7 @@ from simulation import Simulation
 from matplotlib import pyplot as plt
 from math_utils import log_stable
 
+
 def run():
 
     # n_x, n_y = 45, 45
@@ -22,7 +23,7 @@ def run():
     ps = 0.5
     ps_vec = ps * np.ones(N)
 
-    sim = Simulation(G, omega_matrix = np.ones((N,N)), p_s_vec = ps_vec)
+    sim = Simulation(G, omega_matrix=np.ones((N, N)), p_s_vec=ps_vec)
 
     omega = 0.53
     phi_hist, spin_hist = sim.run(T, omega, ps)
@@ -31,25 +32,26 @@ def run():
 
     hamiltonian = np.zeros(T)
 
-    for t in range(1,T):
-        hamiltonian[t] = sim.calculate_global_energy(spin_hist[:,t])
-  
+    for t in range(1, T):
+        hamiltonian[t] = sim.calculate_global_energy(spin_hist[:, t])
+
     until_T = T
 
     fig, ax = plt.subplots(2, 2, figsize=(14, 7), dpi=100)
 
-    ax[0,0].imshow(phi_hist[:, :until_T], aspect="auto", interpolation="none")
-    ax[0,0].set_title("Phi Hist")
-    ax[0,1].imshow(spin_hist[:, :until_T], aspect="auto", interpolation="none")
-    ax[0,1].set_title("Spin Hist")
-    ax[1,0].plot(vfe[:, :until_T].mean(axis=0))
-    ax[1,0].set_title("VFE")
-    ax[1,1].plot(hamiltonian[1:until_T])
-    ax[1,1].set_title("Total energy (H)")
+    ax[0, 0].imshow(phi_hist[:, :until_T], aspect="auto", interpolation="none")
+    ax[0, 0].set_title("Phi Hist")
+    ax[0, 1].imshow(spin_hist[:, :until_T], aspect="auto", interpolation="none")
+    ax[0, 1].set_title("Spin Hist")
+    ax[1, 0].plot(vfe[:, :until_T].mean(axis=0))
+    ax[1, 0].set_title("VFE")
+    ax[1, 1].plot(hamiltonian[1:until_T])
+    ax[1, 1].set_title("Total energy (H)")
 
-    write_folder = ''
-    
+    write_folder = "../"
+
     plt.savefig(os.path.join(write_folder, "tmp.png"), dpi=325, bbox_inches="tight")
+
 
 if __name__ == "__main__":
 

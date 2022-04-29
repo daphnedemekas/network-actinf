@@ -24,10 +24,10 @@ class Simulation:
         self.N = G.number_of_nodes()
 
         if omega_matrix is not None:
-            self.W = log_stable(omega_matrix/(1.0 - omega_matrix))
+            self.W = log_stable(omega_matrix / (1.0 - omega_matrix))
             self.W = self.W * self.A  # remove 0 edges, including self-loops
 
-        self.theta = log_stable(p_s_vec /(1.0 - p_s_vec))
+        self.theta = log_stable(p_s_vec / (1.0 - p_s_vec))
         if not initial_posteriors:
             initial_posteriors = np.random.rand(
                 self.N
@@ -77,25 +77,19 @@ class Simulation:
         return sum_down_spins, sum_up_spins, spin_diffs
 
     def calculate_global_energy(self, spin_state: array) -> float:
-        """
-        @NOTE: This calculation seems like it's calculating the negative energy, but
-        that's just because we're actually computing the log likelhiood ratios with fliipped signs,
-        e.g. as W(i,j) = log[ (1-omega(i,j)) / omega(i,j)], which is actually -W(i,j). THat's why you (Conor) were
-        getting these counter-intuitive weird energy function results. 28.04.2022
-        """
-
         # the signing of the spins doesn't matter
         # spins_signed = 2 * (spin_state) - 1.0  # convert from +1, 0 --> +1, -1 #
-        spins_signed = 2 * (np.absolute(spin_state - 1.0)) - 1.0 #  @NOTE: I think we assume 1.0 ==> -1, so this needs to flip to this expression
-        
-        # don't use this because in the file `plot_VFE_with_H.py` we're using just the older, homogeneous po formulation
-        # this version is when you have the weights defined in self.W
-        # spins_signed = spin_state
-        # pairwise_sum = 0.5 * (spins_signed.T @ self.W @ spins_signed)
+        spins_signed = (
+            2 * (np.absolute(spin_state - 1.0)) - 1.0
+        )  #  @NOTE: I think we assume 1.0 ==> -1, so this needs to flip to this expression
 
         # if all couplings all the same (there's one single "p_{\mathcal{O}}") , you can do this instead
         coupling = self.logpo - self.logpo_C
-        pairwise_sum = coupling * 0.5 * ((spins_signed[...,None] * spins_signed) * self.A).flatten().sum()
+        pairwise_sum = (
+            coupling
+            * 0.5
+            * ((spins_signed[..., None] * spins_signed) * self.A).flatten().sum()
+        )
         E = -(pairwise_sum + (spins_signed * self.theta).sum())
 
         return E
@@ -158,9 +152,7 @@ class Simulation:
         phi = self.initial_posteriors.copy()
         # spin_hist, phi_hist, kld_hist, accur_hist, negH_hist, energy_hist = self.get_hist_array(T)
         spin_hist, phi_hist = self.get_hist_array(T)
-
-        log_precisions = self.get_log_precision(po, ps)
-
+        self.get_log_precision(po, ps)
         for t in range(T):
 
             sum_down_spins, sum_up_spins, spin_diffs = self.calculate_spins(spin_state)
@@ -171,7 +163,6 @@ class Simulation:
             # store histories of spin states and posteriors
             spin_hist[:, t] = spin_state.copy()
             phi_hist[:, t] = phi.copy()
-
 
         # return phi_hist, spin_hist, kld_hist, accur_hist, negH_hist, energy_hist
         return phi_hist, spin_hist
@@ -247,53 +238,33 @@ class Simulation:
         data = np.arange(T), A_t
         return data
 
-def plot_regimes(regimes: list, po_vec=None, ps_vec=None):
 
-    fig, axes = plt.subplots(
-        nrows=len(regimes), ncols=1, figsize=(10, 8), sharex=True, sharey=False
-    )
-    for i in range(len(regimes)):
-        axes[i].plot(regimes[i][0], regimes[i][1])
-        axes[i].set_xlim(0, len(regimes[i][0]))
-        axes[i].tick_params(axis="both", which="major", labelsize=16)
-        if len(po_vec) == len(regimes):
-            axes[i].set_title(
-                "$p_{\mathcal{O}} = $" + str(po_vec[i].round(2)), fontsize=18
-            )
-        elif len(ps_vec) == len(regimes):
-            axes[i].set_title(
-                "$p_{\mathcal{O}} = $" + str(po_vec[i].round(2)), fontsize=18
-            )
-        elif len(po_vec) == len(regimes) and len(ps_vec) == len(regimes):
-            title = "$p_{\mathcal{O}} = $" + str(po_vec[i].round(2))
-            title += " $p_{\mathcal{O}} = $" + str(po_vec[i].round(2))
-            axes[i].set_title(title, fontsize=12)
-
-    return axes
-
-
-class SimulationNP(Simulation):
-
-    def __init__(self, 
-                G, 
-                k_matrix, 
-                omega_matrix = None,
-                init_scale = 0.7,
-                p_s_vec: array = None,
-                initial_posteriors=None,
-                initial_spins=None,
-                learning_rate = 0.1,
-            ):
-        super().__init__(G = G, omega_matrix = omega_matrix, p_s_vec = p_s_vec, initial_posteriors = initial_posteriors, initial_spins= initial_spins)
+class SimulationVectorized(Simulation):
+    def __init__(
+        self,
+        G,
+        k_matrix=None,
+        omega_matrix=None,
+        init_scale=0.7,
+        p_s_vec: array = None,
+        initial_posteriors=None,
+        initial_spins=None,
+        learning_rate=0.1,
+    ):
+        super().__init__(
+            G=G,
+            omega_matrix=omega_matrix,
+            p_s_vec=p_s_vec,
+            initial_posteriors=initial_posteriors,
+            initial_spins=initial_spins,
+        )
         self.k_matrix = k_matrix
 
         if omega_matrix is None:
-            self.omega_matrix = init_scale * np.ones(k_matrix.shape)
-
-        # self.omega_matrix = np.exp(k_matrix * omega_matrix) / (np.exp(k_matrix * omega_matrix) + np.exp(k_matrix * (1. - omega_matrix))) 
+            omega_matrix = init_scale * np.ones(k_matrix.shape)
+        # self.omega_matrix = np.exp(k_matrix * omega_matrix) / (np.exp(k_matrix * omega_matrix) + np.exp(k_matrix * (1. - omega_matrix)))
+        self.omega_matrix = omega_matrix * self.A
         self.update_W()
-
-        self.omega_matrix = self.omega_matrix * self.A
 
         self.learning_rate = learning_rate
 
@@ -316,14 +287,52 @@ class SimulationNP(Simulation):
 
         return spin_state
 
-    def update_K(self, phi,spin_state):
+    def calculate_global_energy(self, spin_state: array) -> float:
+        """
+        this version is when you have the weights defined in self.W
+        """
 
-        xi = 2*spin_state - 1
+        # this version is when you have the weights defined in self.W
+        spins_signed = spin_state
+        pairwise_sum = 0.5 * (spins_signed.T @ self.W @ spins_signed)
+        E = -(pairwise_sum + (spins_signed * self.theta).sum())
+        return E
+
+    def run(self, T: int) -> Tuple[array, array]:
+
+        # spin states -- 1.0 == DOWN, 0.0 == UP
+        spin_state = self.initial_spins.copy()
+
+        # posteriors
+        phi = self.initial_posteriors.copy()
+        # spin_hist, phi_hist, kld_hist, accur_hist, negH_hist, energy_hist = self.get_hist_array(T)
+        spin_hist, phi_hist, _ = self.get_hist_array(T)
+
+        for t in range(T):
+
+            neg_delta_E = -1 * self.compute_energy_differences(spin_state)
+
+            phi = self.compute_posterior(neg_delta_E)
+
+            spin_state = self.sample_spin_state(phi)
+
+            # store histories of spin states and posteriors
+            spin_hist[:, t] = spin_state.copy()
+            phi_hist[:, t] = phi.copy()
+
+        return phi_hist, spin_hist
+
+    def update_K(self, phi, spin_state):
+
+        xi = 2 * spin_state - 1
 
         exp_term = compute_exp_normalizing(self.omega_matrix, self.k_matrix)
 
-        phi_col_vec = phi[...,None]
-        dfdk = xi*(2 * phi_col_vec * self.omega_matrix - phi_col_vec  - self.omega_matrix) + exp_term
+        phi_col_vec = phi[..., None]
+        dfdk = (
+            xi * (2 * phi_col_vec * self.omega_matrix - phi_col_vec - self.omega_matrix)
+            + exp_term
+        )
 
         dfdk *= self.A
 
@@ -332,10 +341,12 @@ class SimulationNP(Simulation):
         self.k_matrix = new_K_matrix
 
         return new_K_matrix
-        
+
     def update_W(self):
 
-        self.W = self.k_matrix*(1-self.omega_matrix) - self.k_matrix*self.omega_matrix
+        self.W = self.k_matrix * (self.omega_matrix) - self.k_matrix * (
+            1 - self.omega_matrix
+        )
 
         return self.W
 
@@ -345,7 +356,7 @@ class SimulationNP(Simulation):
         k_matrix_hist = np.empty((self.N, self.N, T))
         return spin_hist, phi_hist, k_matrix_hist
 
-    def run(self, T: int) -> Tuple[array, array, array]:
+    def run_learning(self, T: int) -> Tuple[array, array, array]:
 
         # spin states -- 1.0 == DOWN, 0.0 == UP
         spin_state = self.initial_spins.copy()
@@ -373,28 +384,28 @@ class SimulationNP(Simulation):
             k_matrix_hist[:, :, t] = new_k_matrix.copy()
 
         return phi_hist, spin_hist, k_matrix_hist
-    
-    def run_no_learning(self, T: int) -> Tuple[array, array]:
-
-        # spin states -- 1.0 == DOWN, 0.0 == UP
-        spin_state = self.initial_spins.copy()
-
-        # posteriors
-        phi = self.initial_posteriors.copy()
-        # spin_hist, phi_hist, kld_hist, accur_hist, negH_hist, energy_hist = self.get_hist_array(T)
-        spin_hist, phi_hist, _ = self.get_hist_array(T)
-
-        for t in range(T):
-
-            neg_delta_E = self.compute_energy_differences(spin_state)
-
-            phi = self.compute_posterior(neg_delta_E)
-
-            spin_state = self.sample_spin_state(phi)
-            
-            # store histories of spin states and posteriors
-            spin_hist[:, t] = spin_state.copy()
-            phi_hist[:, t] = phi.copy()
 
 
-        return phi_hist, spin_hist
+def plot_regimes(regimes: list, po_vec=None, ps_vec=None):
+
+    fig, axes = plt.subplots(
+        nrows=len(regimes), ncols=1, figsize=(10, 8), sharex=True, sharey=False
+    )
+    for i in range(len(regimes)):
+        axes[i].plot(regimes[i][0], regimes[i][1])
+        axes[i].set_xlim(0, len(regimes[i][0]))
+        axes[i].tick_params(axis="both", which="major", labelsize=16)
+        if len(po_vec) == len(regimes):
+            axes[i].set_title(
+                "$p_{\mathcal{O}} = $" + str(po_vec[i].round(2)), fontsize=18
+            )
+        elif len(ps_vec) == len(regimes):
+            axes[i].set_title(
+                "$p_{\mathcal{O}} = $" + str(po_vec[i].round(2)), fontsize=18
+            )
+        elif len(po_vec) == len(regimes) and len(ps_vec) == len(regimes):
+            title = "$p_{\mathcal{O}} = $" + str(po_vec[i].round(2))
+            title += " $p_{\mathcal{O}} = $" + str(po_vec[i].round(2))
+            axes[i].set_title(title, fontsize=12)
+
+    return axes
