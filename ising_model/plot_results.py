@@ -2,6 +2,7 @@
 import matplotlib.pyplot as plt
 import pickle
 import numpy as np
+import os
 
 #%%
 results_folder = "ERconn_po_sweep1_N100"
