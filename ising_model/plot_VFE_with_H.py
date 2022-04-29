@@ -9,13 +9,14 @@ from math_utils import log_stable
 
 def run():
 
-    # n_x, n_y = 45, 45
-    # G = nx.grid_2d_graph(n_x, n_y)
+    n_x, n_y = 25, 25
+    G = nx.grid_2d_graph(n_x, n_y, periodic=True)
+    N = G.number_of_nodes()
     T = 1000
 
-    N = 500
-    G = nx.fast_gnp_random_graph(N, p=0.04)
-    N = G.number_of_nodes()
+    # N = 500
+    # G = nx.fast_gnp_random_graph(N, p=0.04)
+    # N = G.number_of_nodes()
     A = nx.to_numpy_array(G)
 
     omega_init = 1.0
@@ -25,17 +26,19 @@ def run():
 
     sim = Simulation(G, omega_matrix=np.ones((N, N)), p_s_vec=ps_vec)
 
-    omega = 0.53
+    omega = 0.9999
     phi_hist, spin_hist = sim.run(T, omega, ps)
 
     vfe, _, _ = sim.compute_VFE(phi_hist, spin_hist)
 
     hamiltonian = np.zeros(T)
 
+
     for t in range(1, T):
         hamiltonian[t] = sim.calculate_global_energy(spin_hist[:, t])
 
     until_T = T
+
 
     fig, ax = plt.subplots(2, 2, figsize=(14, 7), dpi=100)
 
