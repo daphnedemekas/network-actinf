@@ -1,24 +1,28 @@
 import numpy as np
 
-num_observations = 4 #1, -2, 2, 0 reward levels
-num_actions = 2 #cooperate, cheat
-num_states = 4  #the possible combinations
-#(cooperate & cooperate): ++, (cooperate & cheat): +-, (cheat&cooperate): -+ , (cheat&cheat): --
+num_observations = 4  # 1, -2, 2, 0 reward levels
+num_actions = 2  # cooperate, cheat
+num_states = 4  # the possible combinations
+# (cooperate & cooperate): ++, (cooperate & cheat): +-, (cheat&cooperate): -+ , (cheat&cheat): --
 
-A = np.array([[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]])
+A = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
 
 C = np.array([1, -2, 2, 0])
 
 
-
-num_actions = 2 #cooperate, cheat 
+num_actions = 2  # cooperate, cheat
 """ Note that we don't really need to 'perform' actions because
 the actions are embedded directly in the observations and states"""
 
-num_states = 4 #the possible combinations 
-#(cooperate & cooperate): ++, (cooperate & cheat): +-, (cheat&cooperate): -+ , (cheat&cheat): --
+num_states = 4  # the possible combinations
+# (cooperate & cooperate): ++, (cooperate & cheat): +-, (cheat&cooperate): -+ , (cheat&cheat): --
 
-reward = [1, -2, 2, 0] #(cooperate & cooperate), (cooperate & cheat), (cheat&cooperate), (cheat&cheat)
+reward = [
+    1,
+    -2,
+    2,
+    0,
+]  # (cooperate & cooperate), (cooperate & cheat), (cheat&cooperate), (cheat&cheat)
 
 
 """ In tit for tat, the player will cooperate until the opponent cheats 
@@ -27,31 +31,30 @@ and then continue cooperating
 
 If this strategy is achieved in a noiseless system, then the players will converge to continuous cooperation p(s = ++)"""
 
-B_tit_for_tat = np.array([[1,0,0,0],
-                          [0,0,1,0],
-                          [0,1,0,0],
-                          [0,0,0,1]])
+B_tit_for_tat = np.array(
+    [[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 0, 1]]
+)
 
 
-#p(++ | ++ ) = 1
-#p( ++ | +- ) = 0
-#p( ++ | -+ ) = 0
-#p( ++ | -- ) = 0
+# p(++ | ++ ) = 1
+# p( ++ | +- ) = 0
+# p( ++ | -+ ) = 0
+# p( ++ | -- ) = 0
 
-#p( +- | ++ ) = 0
-#p( +- | +-) = 0
-#p( +- | -+ ) = 1
-#p( +- | -- ) = 0
+# p( +- | ++ ) = 0
+# p( +- | +-) = 0
+# p( +- | -+ ) = 1
+# p( +- | -- ) = 0
 
-#p( -+ | ++ ) = 0
-#p( -+ | +- ) = 1
-#p( -+ | -+ ) = 0
-#p( -+ | -- ) = 0
+# p( -+ | ++ ) = 0
+# p( -+ | +- ) = 1
+# p( -+ | -+ ) = 0
+# p( -+ | -- ) = 0
 
-#p( -- | ++ ) = 0
-#p( -- | +- ) = 0
-#p( -- | -+ ) = 0
-#p( -- | -- ) = 1
+# p( -- | ++ ) = 0
+# p( -- | +- ) = 0
+# p( -- | -+ ) = 0
+# p( -- | -- ) = 1
 
 
 """ An issue occurs though if there is noise in the A matrix
@@ -77,33 +80,37 @@ p(-_ | _+) = 0
 
 """
 
-#p(++ | ++ ) = 1
-#p( ++ | +- ) = p1
-#p( ++ | -+ ) = p2
-#p( ++ | -- ) = p1*p2
+# p(++ | ++ ) = 1
+# p( ++ | +- ) = p1
+# p( ++ | -+ ) = p2
+# p( ++ | -- ) = p1*p2
 
-#p( +- | ++ ) = 0
-#p( +- | +- ) = 0
-#p( +- | -+ ) = (1-p2)
-#p( +- | -- ) = p1*(1-p2)
+# p( +- | ++ ) = 0
+# p( +- | +- ) = 0
+# p( +- | -+ ) = (1-p2)
+# p( +- | -- ) = p1*(1-p2)
 
-#p( -+ | ++ ) = 0
-#p( -+ | +- ) = (1-p1)
-#p( -+ | -+ ) = 0
-#p( -+ | -- ) = (1-p1)*p2
+# p( -+ | ++ ) = 0
+# p( -+ | +- ) = (1-p1)
+# p( -+ | -+ ) = 0
+# p( -+ | -- ) = (1-p1)*p2
 
-#p( -- | ++ ) = 0
-#p( -- | +- ) = 0
-#p( -- | -+ ) = 0
-#p( -- | -- ) = (1-p1)*(1-p2)
+# p( -- | ++ ) = 0
+# p( -- | +- ) = 0
+# p( -- | -+ ) = 0
+# p( -- | -- ) = (1-p1)*(1-p2)
 
 p1 = 0.2
 p2 = 0.2
 
-B_forgiving_tit_for_tat = np.array([[1,p1,p2,p1*p2],
-                                    [0,0,1-p2,p1*(1-p2)],
-                                    [0,1-p1,0,(1-p1)*p2],
-                                    [0,0,0,(1-p1)*(1-p2)]])
+B_forgiving_tit_for_tat = np.array(
+    [
+        [1, p1, p2, p1 * p2],
+        [0, 0, 1 - p2, p1 * (1 - p2)],
+        [0, 1 - p1, 0, (1 - p1) * p2],
+        [0, 0, 0, (1 - p1) * (1 - p2)],
+    ]
+)
 
 
 """In a tit for tat strategy, once an opponent defects, the tit for tat player immediately responds by defecting on the next move.
