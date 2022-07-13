@@ -15,8 +15,8 @@ num_states = (4, 2)  # ((the possible combinations), (procosial, antisocial))
 num_modalities = 1
 num_factors = 2
 
-precision_prosocial = 6.0
-precision_antisocial = 5.0
+precision_prosocial = 3.0
+precision_antisocial = 2.0
 # first modality
 """ The probability of being in reward states cc or dc are more likely if the neighbour is prosocial"""
 
@@ -89,6 +89,8 @@ for t in range(T):
     if t != 0:
         qs_prev_1 = qs_1
         qs_prev_2 = qs_2
+    agent_1.reset()
+    agent_2.reset()
     qs_1 = agent_1.infer_states(observation_1)
     qs_2 = agent_2.infer_states(observation_2)
     """
