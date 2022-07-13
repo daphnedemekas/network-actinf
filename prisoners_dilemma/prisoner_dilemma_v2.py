@@ -3,7 +3,7 @@ from pymdp import utils
 import numpy as np
 from pymdp.agent import Agent
 from .utils import *
-import copy
+import copy 
 
 num_observations = 4  # ((1, -2, 2, 0) reward levels
 # (cooperate & cooperate): ++, (cooperate & defect): +-, (defect&cooperate): -+ , (defect&defect): --

@@ -86,11 +86,6 @@ q_pi_over_time = np.zeros((T, 2, 2))
 
 for t in range(T):
     print(f"time = : {t}")
-    if t != 0:
-        qs_prev_1 = qs_1
-        qs_prev_2 = qs_2
-    agent_1.reset()
-    agent_2.reset()
     qs_1 = agent_1.infer_states(observation_1)
     qs_2 = agent_2.infer_states(observation_2)
     """
