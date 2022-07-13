@@ -28,11 +28,15 @@ def construct_A(precision_prosocial=3.0, precision_antisocial=2.0):
     return A
 
 
-def sample_action_policy_directly(q_pi, policies, num_controls):
+def sample_action_policy_directly(q_pi, policies, num_controls, style = "deterministic"):
 
     num_factors = len(num_controls)
 
-    policy_idx = utils.sample(q_pi)
+    if style == "deterministic":
+        policy_idx = np.argmax(q_pi)
+    elif style == "stochastic":
+        policy_idx = utils.sample(q_pi)
+        
     selected_policy = np.zeros(num_factors)
     for factor_i in range(num_factors):
         selected_policy[factor_i] = policies[policy_idx][0, factor_i]
