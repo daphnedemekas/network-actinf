@@ -31,16 +31,26 @@ B_1[:2, :, 1] = 0.0
 B[0] = B_1
 
 B_2 = np.zeros((2, 2, 2))
+# B_2[:, :, 0] = np.array(
+#     [
+#         [0.8, 0.4],  # given that i cooperated, the probability p (s = prosocial | s_t=1 = prosocial)
+#         [0.2, 0.6],
+#     ] )
+
 B_2[:, :, 0] = np.array(
     [
-        [0.8, 0.4],  # given that i cooperated, the probability p (s = prosocial | s_t=1 = prosocial)
-        [0.2, 0.6],
-    ]
-)
+        [0.5, 0.5],  # given that i cooperated, the probability p (s = prosocial | s_t=1 = prosocial)
+        [0.5, 0.5],
+    ] )
 
-B_2[:, :, 1] = np.array([[0.6, 0.2], [0.4, 0.8]])
+B_2[:, :, 1] = np.array(
+    [
+        [0.5, 0.5],  # given that i cooperated, the probability p (s = prosocial | s_t=1 = prosocial)
+        [0.5, 0.5],
+    ] )
 
 B[1] = B_2
+
 
 # print_B(B)
 
@@ -57,17 +67,12 @@ pB_1 = utils.dirichlet_like(B)
 
 pB_2 = utils.dirichlet_like(B)
 
-agent_1 = Agent(A=A, B=B, C=C, D=D, pB=pB_1, lr_pB=10, factors_to_learn=[0])
-agent_2 = Agent(A=A, B=B, C=C, D=D, pB=pB_2, lr_pB=10, factors_to_learn=[0])
 
-""" We don't allow policies [1,0] or [0,1]"""
-agent_1.policies[1] = agent_1.policies[0]
-agent_1.policies[2] = agent_1.policies[3]
-agent_2.policies[1] = agent_2.policies[0]
-agent_2.policies[2] = agent_2.policies[3]
+agent_1 = Agent(A=A, B=B, C=C, D=D, pB = pB_1, lr_pB = 1, policies = [np.array([[0,0]]), np.array([[1, 1]])])
+agent_2 = Agent(A=A, B=B, C=C, D=D, pB = pB_2,  lr_pB = 1, policies = [np.array([[0,0]]), np.array([[1, 1]])])
 
-observation_1 = [0]
-observation_2 = [0]
+observation_1 = [np.random.choice([0,1])]
+observation_2 = [np.random.choice([0,1])]
 actions = ["cooperate", "cheat"]
 
 qs_prev_1 = D
@@ -84,32 +89,18 @@ actions_over_time = np.zeros((T, 2))
 B_over_time = np.zeros((T, 2, 4, 2))
 q_pi_over_time = np.zeros((T, 2, 2))
 
+
 for t in range(T):
     print(f"time = : {t}")
     qs_1 = agent_1.infer_states(observation_1)
     qs_2 = agent_2.infer_states(observation_2)
-    """
-    print("observations")
-    print(observation_1)
-    print(observation_2)
-    print("AGENT 1 A")
+    if t > 0:
+        qB_1 = agent_1.update_B(qs_prev_1)
+        qB_2 = agent_2.update_B(qs_prev_2)
 
-    print(A[0][int(observation_1[0]),:])
-    print("AGENT 2 A")
-
-    print(A[0][int(observation_2[0]),:])
-    print("qs")
-    print(qs_1)
-    print(qs_2)
-    print()
-    """
     q_pi_1, efe_1 = agent_1.infer_policies()
     q_pi_2, efe_2 = agent_2.infer_policies()
-    print("q_pi")
-    print(q_pi_1)
-    print()
-    # action_1 = agent_1.sample_action()
-    # action_2 = agent_2.sample_action()
+
     action_1 = sample_action_policy_directly(
         q_pi_1, agent_1.policies, agent_1.num_controls
     )
@@ -119,34 +110,21 @@ for t in range(T):
     agent_1.action = action_1
     agent_2.action = action_2
 
+    qs_prev_1 = qs_1
+    qs_prev_2 = qs_2
+
+
     action_1 = action_1[1]
     action_2 = action_2[1]
     actions_over_time[t] = [action_1, action_2]
 
     observation_1 = get_observation(action_1, action_2)
     observation_2 = get_observation(action_2, action_1)
-    """
-    print("AGENT 1 B")
-    print(agent_1.B[0][:,int(observation_1[0]),0])
-    print(agent_1.B[0][:,int(observation_1[0]),1])
-    print("AGENT 2 B")
-    print(agent_2.B[0][:,int(observation_2[0]),0])
-    print(agent_2.B[0][:,int(observation_2[0]),1])
-    """
+
     B_over_time[t, 0, :, 0] = agent_1.B[0][:, int(observation_1[0]), 0]
     B_over_time[t, 1, :, 0] = agent_1.B[0][:, int(observation_1[0]), 1]
     B_over_time[t, 0, :, 1] = agent_2.B[0][:, int(observation_2[0]), 0]
     B_over_time[t, 1, :, 1] = agent_2.B[0][:, int(observation_2[0]), 1]
-
-    q_pi_over_time[t, :, 0] = [q_pi_1[0], q_pi_1[3]]
-    q_pi_over_time[t, :, 1] = [q_pi_2[0], q_pi_2[3]]
-
-    num_factors = len(pB_1)
-
-    qB = copy.deepcopy(pB_1)
-
-    qB_1 = agent_1.update_B(qs_prev_1)
-    qB_2 = agent_2.update_B(qs_prev_2)
 
 import matplotlib.pyplot as plt
 
