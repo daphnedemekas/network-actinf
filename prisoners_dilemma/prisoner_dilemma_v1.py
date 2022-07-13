@@ -113,7 +113,10 @@ for t in range(T):
     qs_prev_1 = qs_1
     qs_prev_2 = qs_2
 
-    actions_over_time[t] = [action_1[1], action_2[1]]
+
+    action_1 = action_1[1]
+    action_2 = action_2[1]
+    actions_over_time[t] = [action_1, action_2]
 
     observation_1 = get_observation(action_1, action_2)
     observation_2 = get_observation(action_2, action_1)
