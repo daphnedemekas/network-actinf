@@ -31,11 +31,6 @@ B_1[:2, :, 1] = 0.0
 B[0] = B_1
 
 B_2 = np.zeros((2, 2, 2))
-# B_2[:, :, 0] = np.array(
-#     [
-#         [0.8, 0.4],  # given that i cooperated, the probability p (s = prosocial | s_t=1 = prosocial)
-#         [0.2, 0.6],
-#     ] )
 
 B_2[:, :, 0] = np.array(
     [
@@ -68,11 +63,12 @@ pB_1 = utils.dirichlet_like(B)
 pB_2 = utils.dirichlet_like(B)
 
 
-agent_1 = Agent(A=A, B=B, C=C, D=D, pB = pB_1, lr_pB = 1, policies = [np.array([[0,0]]), np.array([[1, 1]])])
-agent_2 = Agent(A=A, B=B, C=C, D=D, pB = pB_2,  lr_pB = 1, policies = [np.array([[0,0]]), np.array([[1, 1]])])
+agent_1 = Agent(A=A, B=B, C=C, D=D, pB = pB_1, lr_pB = 0.6, policies = [np.array([[0,0]]), np.array([[1, 1]])])
+agent_2 = Agent(A=A, B=B, C=C, D=D, pB = pB_2,  lr_pB = 0.6, policies = [np.array([[0,0]]), np.array([[1, 1]])])
 
 observation_1 = [np.random.choice([0,1])]
 observation_2 = [np.random.choice([0,1])]
+
 actions = ["cooperate", "cheat"]
 
 qs_prev_1 = D
@@ -82,11 +78,13 @@ observation_names2 = ["prosocial", "antisocial"]
 
 action_names = ["cooperate", "cheat"]
 
-T = 50
+T = 300
 
 
 actions_over_time = np.zeros((T, 2))
-B_over_time = np.zeros((T, 2, 4, 2))
+B1_over_time = np.zeros((T, 4, 4, 2, 2))
+B2_over_time = np.zeros((T, 2, 2, 2, 2))
+
 q_pi_over_time = np.zeros((T, 2, 2))
 
 
@@ -102,10 +100,10 @@ for t in range(T):
     q_pi_2, efe_2 = agent_2.infer_policies()
 
     action_1 = sample_action_policy_directly(
-        q_pi_1, agent_1.policies, agent_1.num_controls
+        q_pi_1, agent_1.policies, agent_1.num_controls, style='deterministic'
     )
     action_2 = sample_action_policy_directly(
-        q_pi_2, agent_2.policies, agent_2.num_controls
+        q_pi_2, agent_2.policies, agent_2.num_controls, style='deterministic'
     )
     agent_1.action = action_1
     agent_2.action = action_2
@@ -116,27 +114,49 @@ for t in range(T):
 
     action_1 = action_1[1]
     action_2 = action_2[1]
-    actions_over_time[t] = [action_1, action_2]
 
     observation_1 = get_observation(action_1, action_2)
     observation_2 = get_observation(action_2, action_1)
+    #if t == 50:
+    #    action_1 = 1
+    #    observation_1 = [1]
+    
+    actions_over_time[t] = [action_1, action_2]
 
-    B_over_time[t, 0, :, 0] = agent_1.B[0][:, int(observation_1[0]), 0]
-    B_over_time[t, 1, :, 0] = agent_1.B[0][:, int(observation_1[0]), 1]
-    B_over_time[t, 0, :, 1] = agent_2.B[0][:, int(observation_2[0]), 0]
-    B_over_time[t, 1, :, 1] = agent_2.B[0][:, int(observation_2[0]), 1]
+    B1_over_time[t, :,:,:, 0] = agent_1.B[0]
+    B1_over_time[t,:,:,:, 0] = agent_1.B[0]
+    B1_over_time[t, :,:,:, 1] = agent_2.B[0]
+    B1_over_time[t,:,:,:, 1] = agent_2.B[0]
+
+    B2_over_time[t, :,:,:, 0] = agent_1.B[1]
+    B2_over_time[t,:,:,:, 0] = agent_1.B[1]
+    B2_over_time[t, :,:,:, 1] = agent_2.B[1]
+    B2_over_time[t,:,:,:, 1] = agent_2.B[1]
+    print(agent_1.B[1][:, :, 0])
+    print(agent_2.B[1][:, :, 1])
+
 
 import matplotlib.pyplot as plt
 
 fig, ax = plt.subplots()
-im = ax.imshow(actions_over_time.T, cmap="gray")
-
+ax.grid(color='w', which = 'minor', linestyle='-', linewidth=2)
+ax.set_xlabel("Time")
+im = ax.imshow(actions_over_time.T,cmap ='gray', aspect = 10)
 ax.set_yticks([0, 1], labels=["Agent 1", "Agent 2"])
 plt.title(
     f"Actions over time for A precisions {precision_prosocial}, {precision_antisocial}"
 )
 
 plt.savefig("actions_over_time2")
+plt.show()
+plt.plot(np.mean(B2_over_time[:,1,:,1,0],axis =1), label = 'probability of antisociality given action defect')
+plt.plot(np.mean(B2_over_time[:,0,:,0,0],axis =1), label = 'probability of prosociality given action cooperate')
+plt.xlabel("Time")
+plt.legend()
+plt.show()
+
+
+"""
 from matplotlib.colors import LinearSegmentedColormap
 
 cmap0 = LinearSegmentedColormap.from_list("", ["white", "darkblue"])
@@ -168,5 +188,5 @@ plt.xticks([0, 1, 2, 3], labels=["CC", "CD", "DC", "DD"])
 plt.subplot(1, 3, 3)
 plt.imshow(B_over_time[49, :, :, 1], cmap=cmap0, vmin=0, vmax=1)
 plt.xticks([0, 1, 2, 3], labels=["CC", "CD", "DC", "DD"])
-
+"""
 plt.savefig("B matrix over time agent 2 2")

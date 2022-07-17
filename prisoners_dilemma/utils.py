@@ -36,7 +36,7 @@ def sample_action_policy_directly(q_pi, policies, num_controls, style = "determi
         policy_idx = np.argmax(q_pi)
     elif style == "stochastic":
         policy_idx = utils.sample(q_pi)
-        
+
     selected_policy = np.zeros(num_factors)
     for factor_i in range(num_factors):
         selected_policy[factor_i] = policies[policy_idx][0, factor_i]
