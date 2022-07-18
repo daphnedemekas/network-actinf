@@ -133,31 +133,34 @@ def sweep(precision_prosocial = 3.0, precision_antisocial = 2.0, lr_pB = 0.6):
 
 T = 200
 
-actions_over_time_all = np.zeros((T, 2, 3))
-B1_over_time_all = np.zeros((T, 4, 4, 2, 2, 3))
-B2_over_time_all = np.zeros((T, 2, 2, 2, 2, 3))
+actions_over_time_all = np.zeros((T, 2, 4))
+#B1_over_time_all = np.zeros((T, 4, 4, 2, 2, 3))
+#B2_over_time_all = np.zeros((T, 2, 2, 2, 2, 3))
 
-q_pi_over_time_all = np.zeros((T, 2, 2, 3))
+q_pi_over_time_all = np.zeros((T, 2, 2, 4,2))
 
 
-for i, p in enumerate([2.5,3,4.0]):
-    actions_over_time_trials = np.zeros((T, 2, 100))
-    B1_over_time_trials = np.zeros((T, 4, 4, 2, 2, 100))
-    B2_over_time_trials = np.zeros((T, 2, 2, 2, 2, 100))
+for i, p in enumerate([3.0,5.0,7.0,9.0]):
+    pa = p - 1
+    actions_over_time_trials = np.zeros((T, 2, 50))
+    #B1_over_time_trials = np.zeros((T, 4, 4, 2, 2, 100))
+    #B2_over_time_trials = np.zeros((T, 2, 2, 2, 2, 100))
 
-    q_pi_over_time_trials = np.zeros((T, 2, 2, 100))
-    for j in range(100):
-        actions_over_time, B1_over_time, B2_over_time, q_pi_over_time = sweep(precision_prosocial = p, lr_pB = 0.5)
+    q_pi_over_time_trials = np.zeros((T, 2, 2, 50))
+    for j in range(50):
+        actions_over_time, B1_over_time, B2_over_time, q_pi_over_time = sweep(precision_prosocial = p, precision_antisocial = pa,lr_pB = 0.6)
         actions_over_time_trials[:,:,j] = actions_over_time
-        B1_over_time_trials[:,:,:,:,:,j] = B1_over_time
-        B2_over_time_trials[:,:,:,:,:,j] = B2_over_time
+        #B1_over_time_trials[:,:,:,:,:,j] = B1_over_time
+        #B2_over_time_trials[:,:,:,:,:,j] = B2_over_time
         q_pi_over_time_trials[:,:,:,j] = q_pi_over_time
     actions_over_time_all[:,:,i] = np.mean(actions_over_time_trials,axis=2)
-    B1_over_time_all[:,:,:,:,:,i] = np.mean(B1_over_time_trials,axis=5)
-    B2_over_time_all[:,:,:,:,:,i] = np.mean(B2_over_time_trials,axis=5)
-    q_pi_over_time_all[:,:,:,i] = np.mean(q_pi_over_time_trials,axis=3)
+
+    #B1_over_time_all[:,:,:,:,:,i] = np.mean(B1_over_time_trials,axis=5)
+    #B2_over_time_all[:,:,:,:,:,i] = np.mean(B2_over_time_trials,axis=5)
+    q_pi_over_time_all[:,:,:,i,0] = np.mean(q_pi_over_time_trials,axis=3)
+    q_pi_over_time_all[:,:,:,i,1] = np.std(q_pi_over_time_trials,axis=3)
 
 np.save('actions_over_time_all',actions_over_time_all,allow_pickle = True)
-np.save('B1_over_time_all',B1_over_time_all,allow_pickle = True)
-np.save('B2_over_time_all',B2_over_time_all,allow_pickle = True)
+#np.save('B1_over_time_all',B1_over_time_all,allow_pickle = True)
+#np.save('B2_over_time_all',B2_over_time_all,allow_pickle = True)
 np.save('q_pi_over_time_all',q_pi_over_time_all,allow_pickle = True)
