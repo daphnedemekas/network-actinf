@@ -15,9 +15,7 @@ num_states = (4, 2)  # ((the possible combinations), (procosial, antisocial))
 num_modalities = 1
 num_factors = 2
 
-def sweep(precision_prosocial = 3.0, precision_antisocial = 2.0, lr_pB = 0.6):
-# first modality
-
+def construct(precision_prosocial, precision_antisocial, lr_pB):
     A = construct_A(precision_prosocial, precision_antisocial)
 
     # print_A(A)
@@ -64,9 +62,11 @@ def sweep(precision_prosocial = 3.0, precision_antisocial = 2.0, lr_pB = 0.6):
     agent_1 = Agent(A=A, B=B, C=C, D=D, pB = pB_1, lr_pB = lr_pB, policies = [np.array([[0,0]]), np.array([[1, 1]])])
     agent_2 = Agent(A=A, B=B, C=C, D=D, pB = pB_2,  lr_pB = lr_pB, policies = [np.array([[0,0]]), np.array([[1, 1]])])
 
+    return agent_1, agent_2, D
+def sweep(agent_1, agent_2, D):
+# first modality
     observation_1 = [np.random.choice([0,1])]
     observation_2 = [np.random.choice([0,1])]
-
     actions = ["cooperate", "cheat"]
 
     qs_prev_1 = D
@@ -133,34 +133,39 @@ def sweep(precision_prosocial = 3.0, precision_antisocial = 2.0, lr_pB = 0.6):
 
 T = 200
 
-actions_over_time_all = np.zeros((T, 2, 4))
-#B1_over_time_all = np.zeros((T, 4, 4, 2, 2, 3))
-#B2_over_time_all = np.zeros((T, 2, 2, 2, 2, 3))
+actions_over_time_all = np.zeros((T, 2, 6))
+B1_over_time_all = np.zeros((T, 4, 4, 2, 2, 6,2))
+B2_over_time_all = np.zeros((T, 2, 2, 2, 2, 6,2))
 
-q_pi_over_time_all = np.zeros((T, 2, 2, 4,2))
+q_pi_over_time_all = np.zeros((T, 2, 2, 6,2))
+num_trials = 100
 
+for i, p in enumerate([3.0,3.5,3.7,3.8,4.0,4.5]):
+    pa = 2.0 
+    actions_over_time_trials = np.zeros((T, 2, num_trials))
+    B1_over_time_trials = np.zeros((T, 4, 4, 2, 2, num_trials))
+    B2_over_time_trials = np.zeros((T, 2, 2, 2, 2, num_trials))
 
-for i, p in enumerate([3.0,5.0,7.0,9.0]):
-    pa = p - 1
-    actions_over_time_trials = np.zeros((T, 2, 50))
-    #B1_over_time_trials = np.zeros((T, 4, 4, 2, 2, 100))
-    #B2_over_time_trials = np.zeros((T, 2, 2, 2, 2, 100))
+    q_pi_over_time_trials = np.zeros((T, 2, 2, num_trials))
+    agent_1, agent_2, D = construct(precision_prosocial = p, precision_antisocial = pa,lr_pB = 0.6)
 
-    q_pi_over_time_trials = np.zeros((T, 2, 2, 50))
-    for j in range(50):
-        actions_over_time, B1_over_time, B2_over_time, q_pi_over_time = sweep(precision_prosocial = p, precision_antisocial = pa,lr_pB = 0.6)
+    for j in range(num_trials):
+        actions_over_time, B1_over_time, B2_over_time, q_pi_over_time = sweep(agent_1, agent_2, D)
         actions_over_time_trials[:,:,j] = actions_over_time
-        #B1_over_time_trials[:,:,:,:,:,j] = B1_over_time
-        #B2_over_time_trials[:,:,:,:,:,j] = B2_over_time
+        B1_over_time_trials[:,:,:,:,:,j] = B1_over_time
+        B2_over_time_trials[:,:,:,:,:,j] = B2_over_time
+
         q_pi_over_time_trials[:,:,:,j] = q_pi_over_time
     actions_over_time_all[:,:,i] = np.mean(actions_over_time_trials,axis=2)
 
-    #B1_over_time_all[:,:,:,:,:,i] = np.mean(B1_over_time_trials,axis=5)
-    #B2_over_time_all[:,:,:,:,:,i] = np.mean(B2_over_time_trials,axis=5)
+    B1_over_time_all[:,:,:,:,:,i,0] = np.mean(B1_over_time_trials,axis=5)
+    B2_over_time_all[:,:,:,:,:,i,0] = np.mean(B2_over_time_trials,axis=5)
+    B1_over_time_all[:,:,:,:,:,i,1] = np.std(B1_over_time_trials,axis=5)
+    B2_over_time_all[:,:,:,:,:,i,1] = np.std(B2_over_time_trials,axis=5)
     q_pi_over_time_all[:,:,:,i,0] = np.mean(q_pi_over_time_trials,axis=3)
     q_pi_over_time_all[:,:,:,i,1] = np.std(q_pi_over_time_trials,axis=3)
 
 np.save('actions_over_time_all',actions_over_time_all,allow_pickle = True)
-#np.save('B1_over_time_all',B1_over_time_all,allow_pickle = True)
-#np.save('B2_over_time_all',B2_over_time_all,allow_pickle = True)
+np.save('B1_over_time_all',B1_over_time_all,allow_pickle = True)
+np.save('B2_over_time_all',B2_over_time_all,allow_pickle = True)
 np.save('q_pi_over_time_all',q_pi_over_time_all,allow_pickle = True)
