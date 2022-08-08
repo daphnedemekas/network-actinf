@@ -77,6 +77,7 @@ def construct(precision_prosocial, precision_antisocial, lr_pB):
 
     pB_2 = utils.dirichlet_like(B)
 
+
     agent_1 = Agent(A=A, B=B, C=C, D=D, pB = pB_1, lr_pB = lr_pB, policies = [np.array([[0,0]]), np.array([[1, 1]])])
     agent_2 = Agent(A=A, B=B, C=C, D=D, pB = pB_2,  lr_pB = lr_pB, policies = [np.array([[0,0]]), np.array([[1, 1]])])
 
@@ -94,7 +95,7 @@ def sweep(agent_1, agent_2, D):
 
     action_names = ["cooperate", "cheat"]
 
-    T = 200
+    T = 300
 
 
     actions_over_time = np.zeros((T, 2))
@@ -148,28 +149,28 @@ def sweep(agent_1, agent_2, D):
         B2_over_time[t,:,:,:, 1] = agent_2.B[1]
     return actions_over_time, B1_over_time, B2_over_time, q_pi_over_time
 
-T = 200
+T = 300
 
-actions_over_time_all = np.zeros((T, 2, 5,5,10,100))
-B1_over_time_all = np.zeros((T, 4, 4, 2, 2, 5,5,10,100))
-B2_over_time_all = np.zeros((T, 2, 2, 2, 2, 5,5,10,100))
+actions_over_time_all = np.zeros((T, 2, 1,1,5,100))
+B1_over_time_all = np.zeros((T, 4, 4, 2, 2, 1,1,5,100))
+B2_over_time_all = np.zeros((T, 2, 2, 2, 2, 1,1,5,100))
 
-q_pi_over_time_all = np.zeros((T, 2, 2, 5,5,10,100))
+q_pi_over_time_all = np.zeros((T, 2, 2, 1,1,5,100))
 num_trials = 100
 
-for i, p_m in enumerate([4.0,5.0,6.0,7.0,8.0]):
+for i, p_m in enumerate([4.0]):
     print(f"p = : {p_m}")
 
-    for j, pa_m in enumerate([4.0,4.5,5.0,5.5,6.0]):
+    for j, pa_m in enumerate([5]):
         print(f"pa = : {pa_m}")
 
-        for k, lr_m in enumerate([0.0,0.3,0.6,0.9,1.2,1.5,2.5,3.5,6.0,10.0]):
+        for k, lr_m in enumerate([0.0,0.3,0.5,0.8,1.0]):
             print(f"lr = : {lr_m}")
 
             for t in range(num_trials):
-                p = np.random.normal(p_m, 0.2)
-                pa = np.random.normal(pa_m, 0.2)
-                lr_pB = np.random.normal(lr_m, 0.2)
+                p = np.random.normal(p_m, 0.05)
+                pa = np.random.normal(pa_m, 0.05)
+                lr_pB = np.random.normal(lr_m, 0.05)
                 if lr_pB < 0:
                     lr_pB = 0
                 agent_1, agent_2, D = construct(precision_prosocial = p, precision_antisocial = pa,lr_pB = lr_pB)
@@ -181,7 +182,7 @@ for i, p_m in enumerate([4.0,5.0,6.0,7.0,8.0]):
                 B2_over_time_all[:,:,:,:,:,i,j,k,t] = B2_over_time
                 q_pi_over_time_all[:,:,:,i,j,k,t] = q_pi_over_time
 
-    np.save('actions_over_time_all',actions_over_time_all,allow_pickle = True)
-    np.save('B1_over_time_all',B1_over_time_all,allow_pickle = True)
-    np.save('B2_over_time_all',B2_over_time_all,allow_pickle = True)
-    np.save('q_pi_over_time_all',q_pi_over_time_all,allow_pickle = True)
+np.save('actions_over_time_all',actions_over_time_all,allow_pickle = True)
+np.save('B1_over_time_all',B1_over_time_all,allow_pickle = True)
+np.save('B2_over_time_all',B2_over_time_all,allow_pickle = True)
+np.save('q_pi_over_time_all',q_pi_over_time_all,allow_pickle = True)
