@@ -13,7 +13,7 @@ num_modalities = 1
 num_factors = 2
 
 
-def construct(precision_prosocial, precision_antisocial, lr_pB):
+def construct(precision_prosocial, precision_antisocial, lr_pB,factors_to_learn):
     A = construct_A(precision_prosocial, precision_antisocial)
 
     # print_A(A)
@@ -56,20 +56,54 @@ def construct(precision_prosocial, precision_antisocial, lr_pB):
     pB_2 = utils.dirichlet_like(B)
 
 
-    agent_1 = Agent(A=A, B=B, C=C, D=D, pB = pB_1, lr_pB = lr_pB, policies = [np.array([[0,0]]), np.array([[1, 1]])])
-    agent_2 = Agent(A=A, B=B, C=C, D=D, pB = pB_2,  lr_pB = lr_pB, policies = [np.array([[0,0]]), np.array([[1, 1]])])
+    agent_1 = Agent(A=A, B=B, C=C, D=D, pB = pB_1, lr_pB = lr_pB, policies = [np.array([[0,0]]), np.array([[1, 1]])],factors_to_learn = factors_to_learn)
+    agent_2 = Agent(A=A, B=B, C=C, D=D, pB = pB_2,  lr_pB = lr_pB, policies = [np.array([[0,0]]), np.array([[1, 1]])],factors_to_learn = factors_to_learn)
 
     return agent_1, agent_2, D
+
+
+
+def construct_2(lr_pB,factors_to_learn):
+    A = construct_A_2()
+    num_factors = 1
+    # print_A(A)
+
+    B = utils.obj_array(num_factors)
+    B_1 = np.ones((4, 4, 2)) * 0.5
+    B_1[2:, :, 0] = 0.0
+    B_1[:2, :, 1] = 0.0
+    B[0] = B_1
+
+    # print_B(B)
+
+    C = utils.obj_array(num_modalities)
+    C[0] = np.array([3, 1, 4, 2])
+
+    D = utils.obj_array(num_factors)
+
+    D[0] = np.array([0.25, 0.25, 0.25, 0.25])
+
+    pB_1 = utils.dirichlet_like(B)
+
+    pB_2 = utils.dirichlet_like(B)
+
+
+    agent_1 = Agent(A=A, B=B, C=C, D=D, pB = pB_1, lr_pB = lr_pB, factors_to_learn = factors_to_learn)
+    agent_2 = Agent(A=A, B=B, C=C, D=D, pB = pB_2,  lr_pB = lr_pB, factors_to_learn = factors_to_learn)
+
+    return agent_1, agent_2, D
+
+
 def sweep(agent_1, agent_2, observation_1, observation_2, D, T, sample_style = 'deterministic'):
     # first modality
     qs_prev_1 = D
     qs_prev_2 = D
 
-    actions_over_time = np.zeros((T-1, 2))
-    B1_over_time = np.zeros((T-1, 4, 4, 2, 2))
-    B2_over_time = np.zeros((T-1, 2, 2, 2, 2))
+    actions_over_time = np.zeros((T, 2))
+    B1_over_time = np.zeros((T, 4, 4, 2, 2))
+    B2_over_time = np.zeros((T, 2, 2, 2, 2))
 
-    q_pi_over_time = np.zeros((T-1, 2, 2))
+    q_pi_over_time = np.zeros((T, 2, 2))
 
 
     for t in range(T):
@@ -141,6 +175,56 @@ def construct_A(precision_prosocial=3.0, precision_antisocial=2.0):
     A[0] = A1
     return A
 
+def sweep_2(agent_1, agent_2, observation_1, observation_2, D, T, sample_style = 'deterministic'):
+    # first modality
+    qs_prev_1 = D
+    qs_prev_2 = D
+
+    actions_over_time = np.zeros((T, 2))
+    B1_over_time = np.zeros((T, 4, 4, 2, 2))
+
+    q_pi_over_time = np.zeros((T, 2, 2))
+
+
+    for t in range(T):
+        qs_1 = agent_1.infer_states(observation_1)
+        qs_2 = agent_2.infer_states(observation_2)
+        if t > 0:
+            qB_1 = agent_1.update_B(qs_prev_1)
+            qB_2 = agent_2.update_B(qs_prev_2)
+
+        q_pi_1, efe_1 = agent_1.infer_policies()
+        q_pi_2, efe_2 = agent_2.infer_policies()
+        q_pi_over_time[t,:,0] = q_pi_1
+        q_pi_over_time[t,:,1] = q_pi_2
+
+        action_1 = agent_1.sample_action(sample_style = sample_style)
+        action_2 = agent_2.sample_action()
+        agent_1.action = action_1
+        agent_2.action = action_2
+
+        qs_prev_1 = qs_1
+        qs_prev_2 = qs_2
+
+        action_1 = action_1[0]
+        action_2 = action_2[0]
+
+        observation_1 = get_observation(action_1, action_2)
+        observation_2 = get_observation(action_2, action_1)
+
+        actions_over_time[t] = [action_1, action_2]
+
+        B1_over_time[t, :,:,:, 0] = agent_1.B[0]
+        B1_over_time[t,:,:,:, 0] = agent_1.B[0]
+        B1_over_time[t, :,:,:, 1] = agent_2.B[0]
+        B1_over_time[t,:,:,:, 1] = agent_2.B[0]
+    return actions_over_time, B1_over_time, q_pi_over_time
+
+def construct_A_2():
+    A = utils.obj_array(1)
+    A1 = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
+    A[0] = A1
+    return A
 
 def sample_action_policy_directly(q_pi, policies, num_controls, style = "deterministic"):
 
