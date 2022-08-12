@@ -184,11 +184,14 @@ def sweep_2(agent_1, agent_2, observation_1, observation_2, D, T, sample_style =
     B1_over_time = np.zeros((T, 4, 4, 2, 2))
 
     q_pi_over_time = np.zeros((T, 2, 2))
+    q_s_over_time = np.zeros((T, 4, 2))
 
 
     for t in range(T):
         qs_1 = agent_1.infer_states(observation_1)
         qs_2 = agent_2.infer_states(observation_2)
+        q_s_over_time[t,:,0] = qs_1[0]
+        q_s_over_time[t,:,1] = qs_2[0]
         if t > 0:
             qB_1 = agent_1.update_B(qs_prev_1)
             qB_2 = agent_2.update_B(qs_prev_2)
@@ -198,7 +201,7 @@ def sweep_2(agent_1, agent_2, observation_1, observation_2, D, T, sample_style =
         q_pi_over_time[t,:,0] = q_pi_1
         q_pi_over_time[t,:,1] = q_pi_2
 
-        action_1 = agent_1.sample_action(sample_style = sample_style)
+        action_1 = agent_1.sample_action()
         action_2 = agent_2.sample_action()
         agent_1.action = action_1
         agent_2.action = action_2
@@ -218,7 +221,7 @@ def sweep_2(agent_1, agent_2, observation_1, observation_2, D, T, sample_style =
         B1_over_time[t,:,:,:, 0] = agent_1.B[0]
         B1_over_time[t, :,:,:, 1] = agent_2.B[0]
         B1_over_time[t,:,:,:, 1] = agent_2.B[0]
-    return actions_over_time, B1_over_time, q_pi_over_time
+    return actions_over_time, B1_over_time, q_pi_over_time, q_s_over_time
 
 def construct_A_2():
     A = utils.obj_array(1)
