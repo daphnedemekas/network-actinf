@@ -13,7 +13,7 @@ num_modalities = 1
 num_factors = 2
 
 
-def construct(precision_prosocial, precision_antisocial, lr_pB,factors_to_learn):
+def construct(precision_prosocial, precision_antisocial, lr_pB, lr_pB_2,factors_to_learn):
     A = construct_A(precision_prosocial, precision_antisocial)
 
     # print_A(A)
@@ -57,13 +57,13 @@ def construct(precision_prosocial, precision_antisocial, lr_pB,factors_to_learn)
 
 
     agent_1 = Agent(A=A, B=B, C=C, D=D, pB = pB_1, lr_pB = lr_pB, policies = [np.array([[0,0]]), np.array([[1, 1]])],factors_to_learn = factors_to_learn)
-    agent_2 = Agent(A=A, B=B, C=C, D=D, pB = pB_2,  lr_pB = lr_pB, policies = [np.array([[0,0]]), np.array([[1, 1]])],factors_to_learn = factors_to_learn)
+    agent_2 = Agent(A=A, B=B, C=C, D=D, pB = pB_2,  lr_pB = lr_pB_2, policies = [np.array([[0,0]]), np.array([[1, 1]])],factors_to_learn = factors_to_learn)
 
     return agent_1, agent_2, D
 
 
 
-def construct_2(lr_pB,factors_to_learn):
+def construct_2(lr_pB, lr_pB_2 = None, factors_to_learn = None):
     A = construct_A_2()
     num_factors = 1
     # print_A(A)
@@ -89,7 +89,7 @@ def construct_2(lr_pB,factors_to_learn):
 
 
     agent_1 = Agent(A=A, B=B, C=C, D=D, pB = pB_1, lr_pB = lr_pB, factors_to_learn = factors_to_learn)
-    agent_2 = Agent(A=A, B=B, C=C, D=D, pB = pB_2,  lr_pB = lr_pB, factors_to_learn = factors_to_learn)
+    agent_2 = Agent(A=A, B=B, C=C, D=D, pB = pB_2,  lr_pB = lr_pB_2, factors_to_learn = factors_to_learn)
 
     return agent_1, agent_2, D
 
@@ -175,7 +175,7 @@ def construct_A(precision_prosocial=3.0, precision_antisocial=2.0):
     A[0] = A1
     return A
 
-def sweep_2(agent_1, agent_2, observation_1, observation_2, D, T, sample_style = 'deterministic'):
+def sweep_2(agent_1, agent_2, observation_1, observation_2, D, T, sample_style = 'deterministic', interruption = 80):
     # first modality
     qs_prev_1 = D
     qs_prev_2 = D
