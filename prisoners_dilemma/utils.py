@@ -223,6 +223,45 @@ def sweep_2(agent_1, agent_2, observation_1, observation_2, D, T, sample_style =
         B1_over_time[t,:,:,:, 1] = agent_2.B[0]
     return actions_over_time, B1_over_time, q_pi_over_time, q_s_over_time
 
+
+def sweep_3(agent_1, agent_2, observation_1, observation_2, D, T, sample_style = 'deterministic', interruption = 80):
+    # first modality
+    qs_prev_1 = D
+    qs_prev_2 = D
+
+    actions_over_time = np.zeros((T, 1))
+
+
+    for t in range(T):
+        qs_1 = agent_1.infer_states(observation_1)
+        qs_2 = agent_2.infer_states(observation_2)
+
+        if t > 0:
+            agent_1.update_B(qs_prev_1)
+            agent_2.update_B(qs_prev_2)
+
+        agent_1.infer_policies()
+        agent_2.infer_policies()
+
+
+        action_1 = agent_1.sample_action()
+        action_2 = agent_2.sample_action()
+        agent_1.action = action_1
+        agent_2.action = action_2
+
+        qs_prev_1 = qs_1
+        qs_prev_2 = qs_2
+
+        action_1 = action_1[0]
+        action_2 = action_2[0]
+
+        observation_1 = get_observation(action_1, action_2)
+        observation_2 = get_observation(action_2, action_1)
+
+        actions_over_time[t] = [action_1]
+
+    return actions_over_time
+
 def construct_A_2():
     A = utils.obj_array(1)
     A1 = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
