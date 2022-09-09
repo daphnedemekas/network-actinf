@@ -84,32 +84,34 @@ def construct(precision_prosocial, precision_antisocial, lr_pB):
     return agent_1, agent_2, D
 
 T = 1000
-num_trials = 1
+num_trials = 100
 
-actions_over_time_all = np.zeros((T, 1,100,100,num_trials))
+actions_over_time_all = np.zeros((T, 2,3,50,50,num_trials))
 #B1_over_time_all = np.zeros((T, 4, 4, 2, 2,30,30,num_trials))
 
 #q_pi_over_time_all = np.zeros((T, 2, 2,30,30,num_trials))
 
-for k, lr_pB_1 in enumerate(np.linspace(0.01,0.6,100)):
-    print(f"lr = : {lr_pB_1}")
-    for j, lr_pB_2 in enumerate(np.linspace(0.01,0.6,100)):
-        for t in range(num_trials):
+for a, alpha in enumerate([1.0,3.0,5.0]):
 
-            #alpha_1 = np.random.normal(alpha_m, 0.15)
-            #alpha_2 = np.random.normal(alpha_m, 0.15)
+    for k, lr_pB_1 in enumerate(np.linspace(0.01,0.6,50)):
+        print(f"lr = : {lr_pB_1}")
+        for j, lr_pB_2 in enumerate(np.linspace(0.01,0.6,50)):
+            for t in range(num_trials):
 
-            agent_1, agent_2, D = construct_2(lr_pB = lr_pB_1,lr_pB_2 = lr_pB_2,factors_to_learn="all")
-            #agent_1.action_selection = "stochastic"
-            #agent_2.action_selection = "stochastic"
-            #agent_1.alpha = alpha_1
-            #agent_2.alpha = alpha_2
-            actions_over_time = sweep_3(agent_1, agent_2, observation_1 = [0], observation_2 = [0],D=D,T=T)
+                #alpha_1 = np.random.normal(alpha_m, 0.15)
+                #alpha_2 = np.random.normal(alpha_m, 0.15)
 
-            #B1_over_time_all[:,:,:,:,:,k,j,t] = B1_over_time
-            #q_pi_over_time_all[:,:,:,k,j,t] = q_pi_over_time
-            actions_over_time_all[:,:,k,j,t] = actions_over_time
+                agent_1, agent_2, D = construct_2(lr_pB = lr_pB_1,lr_pB_2 = lr_pB_2,factors_to_learn="all")
+                agent_1.action_selection = "stochastic"
+                agent_2.action_selection = "stochastic"
+                agent_1.alpha = alpha
+                agent_2.alpha = alpha
+                actions_over_time = sweep_3(agent_1, agent_2, observation_1 = [0], observation_2 = [0],D=D,T=T)
 
-np.save('actions_over_time_all',actions_over_time_all,allow_pickle = True)
+                #B1_over_time_all[:,:,:,:,:,k,j,t] = B1_over_time
+                #q_pi_over_time_all[:,:,:,k,j,t] = q_pi_over_time
+                actions_over_time_all[:,:,a,k,j,t] = actions_over_time
+
+                np.save('actions_over_time_all',actions_over_time_all,allow_pickle = True)
 #np.save('B1_over_time_all',B1_over_time_all,allow_pickle = True)
-#np.save('q_pi_over_time_all',q_pi_over_time_all,allow_pickle = True)
+#np.save('q_pi_over_time_all',q_pi_over_time_all,allow_pickle = True)s21

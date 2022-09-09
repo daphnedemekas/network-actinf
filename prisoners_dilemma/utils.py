@@ -229,7 +229,7 @@ def sweep_3(agent_1, agent_2, observation_1, observation_2, D, T, sample_style =
     qs_prev_1 = D
     qs_prev_2 = D
 
-    actions_over_time = np.zeros((T, 1))
+    actions_over_time = np.zeros((T, 2))
 
 
     for t in range(T):
@@ -258,7 +258,7 @@ def sweep_3(agent_1, agent_2, observation_1, observation_2, D, T, sample_style =
         observation_1 = get_observation(action_1, action_2)
         observation_2 = get_observation(action_2, action_1)
 
-        actions_over_time[t] = [action_1]
+        actions_over_time[t] = [action_1, action_2]
 
     return actions_over_time
 
