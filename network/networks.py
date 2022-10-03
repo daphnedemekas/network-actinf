@@ -1,7 +1,7 @@
 import networkx as nx
 import random
 import matplotlib.pyplot as plt
-from config import graph_generation_fns as gen_funcs
+from .config import graph_generation_fns as gen_funcs
 
 
 def create_network_dict(
