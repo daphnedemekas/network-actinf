@@ -216,7 +216,7 @@ def run_sim_collect_actions(agent_1, agent_2, observation_1, observation_2, D, T
     qs_prev_1 = D
     qs_prev_2 = D
 
-    actions_over_time = np.zeros((T, 1))
+    actions_over_time = np.zeros((T, 2))
 
     for t in range(T):
         qs_1 = agent_1.infer_states(observation_1)
@@ -243,7 +243,7 @@ def run_sim_collect_actions(agent_1, agent_2, observation_1, observation_2, D, T
         observation_1 = get_observation(action_1, action_2)
         observation_2 = get_observation(action_2, action_1)
 
-        actions_over_time[t] = [action_1]
+        actions_over_time[t] = [action_1, action_2]
 
     return actions_over_time
 
