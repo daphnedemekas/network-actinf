@@ -9,7 +9,7 @@ from pymdp.agent import Agent
 import random
 
 # %%
-ER_network = nx.fast_gnp_random_graph(n=20, p=0.3)
+ER_network = nx.fast_gnp_random_graph(n=20, p=0.8)
 pos = nx.spring_layout(ER_network)
 ER_network.add_nodes_from(pos.keys())
 for n, p in pos.items():
@@ -17,7 +17,7 @@ for n, p in pos.items():
 # %%
 
 factors_to_learn = "all"
-lr_pB = 0.6
+lr_pB = 0.1
 import numpy as np
 
 
@@ -31,6 +31,7 @@ def setup_network_deterministic_fixed_lr(G):
             A=A, B=B, C=C, D=D, pB=pB_1, lr_pB=lr_pB, factors_to_learn=factors_to_learn
         )
         agent_i.observation = None
+        agent_i.qs = D
         agents_dict[i] = agent_i
 
     nx.set_node_attributes(G, agents_dict, "agent")
@@ -62,7 +63,6 @@ def run_simulation(G, T: int):
 
             agent = agent_node_attrs["agent"]
             opponent = opponent_node_attrs["agent"]
-            D = agent.D
 
             if agent.observation == None:
                 observation_1 = [0]
@@ -94,9 +94,9 @@ def run_simulation(G, T: int):
             }
 
     return rounds
+T = 20
 
-
-rounds = run_simulation(G, T=100)
+rounds = run_simulation(G, T)
 
 # %%
 def get_actions(rounds, T, N):
@@ -107,7 +107,7 @@ def get_actions(rounds, T, N):
     return actions
 
 
-actions = get_actions(rounds, 100, len(G.nodes()))
+actions = get_actions(rounds, T, len(G.nodes()))
 # %%
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
