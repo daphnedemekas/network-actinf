@@ -64,6 +64,8 @@ def construct(lr_pB, lr_pB_2=None, factors_to_learn=None):
     agent_2 = Agent(
         A=A, B=B, C=C, D=D, pB=pB_2, lr_pB=lr_pB_2, factors_to_learn=factors_to_learn
     )
+    #agent_1.policies = agent_1.policies[:2]
+    #agent_2.policies = agent_2.policies[:2]
 
     return agent_1, agent_2, D
 
@@ -81,6 +83,8 @@ def run_sim_collect_all_data(agent_1, agent_2, observation_1, observation_2, D, 
 
     q_pi_over_time = np.zeros((T, 2, 2))
     q_s_over_time = np.zeros((T, 4, 2))
+
+    qpB_over_time = np.zeros((T-1,4,4,2))
 
     for t in range(T):
         qs_1 = agent_1.infer_states(observation_1)
@@ -114,10 +118,11 @@ def run_sim_collect_all_data(agent_1, agent_2, observation_1, observation_2, D, 
         actions_over_time[t] = [action_1, action_2]
 
         B1_over_time[t, :, :, :, 0] = agent_1.B[0]
-        B1_over_time[t, :, :, :, 0] = agent_1.B[0]
         B1_over_time[t, :, :, :, 1] = agent_2.B[0]
-        B1_over_time[t, :, :, :, 1] = agent_2.B[0]
-    return actions_over_time, B1_over_time, q_pi_over_time, q_s_over_time, agent_1
+
+        if t > 0:
+            qpB_over_time[t-1, :, :, :] = qB_1[0]
+    return actions_over_time, B1_over_time, qpB_over_time, q_pi_over_time, q_s_over_time, agent_1
 
 #strategy
 def plot_b_matrices(agent):
