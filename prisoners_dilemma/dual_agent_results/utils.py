@@ -84,7 +84,8 @@ def run_sim_collect_all_data(agent_1, agent_2, observation_1, observation_2, D, 
     q_pi_over_time = np.zeros((T, 2, 2))
     q_s_over_time = np.zeros((T, 4, 2))
 
-    qpB_over_time = np.zeros((T-1,4,4,2))
+    qpB_over_time = np.zeros((T-1,4,4,2,2))
+    efe_over_time = np.zeros((T,2,2))
 
     for t in range(T):
         qs_1 = agent_1.infer_states(observation_1)
@@ -97,6 +98,9 @@ def run_sim_collect_all_data(agent_1, agent_2, observation_1, observation_2, D, 
 
         q_pi_1, efe_1 = agent_1.infer_policies()
         q_pi_2, efe_2 = agent_2.infer_policies()
+        efe_over_time[t,:,0] = efe_1
+        efe_over_time[t,:,1] = efe_2
+
         q_pi_over_time[t, :, 0] = q_pi_1
         q_pi_over_time[t, :, 1] = q_pi_2
 
@@ -121,8 +125,10 @@ def run_sim_collect_all_data(agent_1, agent_2, observation_1, observation_2, D, 
         B1_over_time[t, :, :, :, 1] = agent_2.B[0]
 
         if t > 0:
-            qpB_over_time[t-1, :, :, :] = qB_1[0]
-    return actions_over_time, B1_over_time, qpB_over_time, q_pi_over_time, q_s_over_time, agent_1
+            qpB_over_time[t-1, :, :, :,0] = qB_1[0]
+            qpB_over_time[t-1, :, :, :,1] = qB_2[0]
+
+    return actions_over_time, B1_over_time, qpB_over_time, q_pi_over_time, q_s_over_time, agent_1, efe_over_time
 
 #strategy
 def plot_b_matrices(agent):
