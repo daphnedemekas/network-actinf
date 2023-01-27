@@ -10,7 +10,7 @@ def run_dual_sweep_stochastic(
     T,
     num_trials,
     alphas=[1, 3],
-    lrs1=np.linspace(0.01, 0.6, 100)[50:],
+    lrs1=np.linspace(0.01, 0.6, 100)[25:50],
     lrs2=np.linspace(0.01, 0.6, 100),
 ):
     actions_over_time_all = np.zeros((T, 2, len(lrs1), len(lrs2), len(alphas)))
@@ -26,6 +26,8 @@ def run_dual_sweep_stochastic(
             os.mkdir(f"stochastic/{lr_pB_1}")
             print(f"lr = : {lr_pB_1}")
             for j, lr_pB_2 in enumerate(lrs2):
+                if os.path.exists(f"stochastic/{lr_pB_1}/{lr_pB_2}"):
+                    continue
                 os.mkdir(f"stochastic/{lr_pB_1}/{lr_pB_2}")
 
                 print(f"lr2 = : {lr_pB_2}")
