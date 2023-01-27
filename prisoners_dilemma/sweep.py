@@ -23,8 +23,11 @@ def run_dual_sweep_stochastic(
 
     for a, alpha in enumerate(alphas):
         for k, lr_pB_1 in enumerate(lrs1):
+            os.mkdir(f"stochastic/{lr_pB_1}")
             print(f"lr = : {lr_pB_1}")
             for j, lr_pB_2 in enumerate(lrs2):
+                os.mkdir(f"stochastic/{lr_pB_1}/{lr_pB_2}")
+
                 print(f"lr2 = : {lr_pB_2}")
 
                 collect = []
@@ -50,11 +53,11 @@ def run_dual_sweep_stochastic(
                 )
                 # B1_over_time_all[:, :, :, :, :, k, j, a, t] = B1_over_time
                 # q_pi_over_time_all[:, :, :, k, j, a, t] = q_pi_over_time
-            np.save(
-                "stochastic/actions_over_time_all",
-                actions_over_time_all,
-                allow_pickle=True,
-            )
+                np.save(
+                    f"stochastic/{lr_pB_1}/{lr_pB_2}/actions_over_time_all",
+                    actions_over_time_all,
+                    allow_pickle=True,
+                )
     # np.save("stochastic/B1_over_time_all", B1_over_time_all, allow_pickle=True)
     # np.save("stochastic/q_pi_over_time_all", q_pi_over_time_all, allow_pickle=True)
 
