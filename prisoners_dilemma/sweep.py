@@ -23,7 +23,8 @@ def run_dual_sweep_stochastic(
 
     for a, alpha in enumerate(alphas):
         for k, lr_pB_1 in enumerate(lrs1):
-            os.mkdir(f"stochastic/{lr_pB_1}")
+            if not os.path.exists(f"stochastic/{lr_pB_1}"):
+                os.mkdir(f"stochastic/{lr_pB_1}")
             print(f"lr = : {lr_pB_1}")
             for j, lr_pB_2 in enumerate(lrs2):
                 if os.path.exists(f"stochastic/{lr_pB_1}/{lr_pB_2}"):
