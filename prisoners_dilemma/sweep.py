@@ -10,7 +10,7 @@ def run_dual_sweep_stochastic(
     T,
     num_trials,
     alphas=[1, 3],
-    lrs1=np.linspace(0.01, 0.6, 100)[25:],
+    lrs1=np.linspace(0.01, 0.6, 100)[50:],
     lrs2=np.linspace(0.01, 0.6, 100),
 ):
     actions_over_time_all = np.zeros((T, 2, len(lrs1), len(lrs2), len(alphas)))
