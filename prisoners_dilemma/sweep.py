@@ -10,8 +10,8 @@ def run_dual_sweep_stochastic(
     T,
     num_trials,
     alphas=[1, 3],
-    lrs1=np.linspace(0.01, 0.6, 100)[25:50],
-    lrs2=np.linspace(0.01, 0.6, 100),
+    lrs1=np.linspace(0.01, 0.6, 100),
+    lrs2=np.linspace(0.01, 0.6, 100[25:]),
 ):
     actions_over_time_all = np.zeros((T, 2, len(lrs1), len(lrs2), len(alphas)))
     # B1_over_time_all = np.zeros(
@@ -108,4 +108,4 @@ def run_dual_sweep_deterministic(
         np.save("q_pi_over_time_all", q_pi_over_time_all, allow_pickle=True)
 
 
-run_dual_sweep_stochastic(2000, 500)
+run_dual_sweep_stochastic(1000, 100)
