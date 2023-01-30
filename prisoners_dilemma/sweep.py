@@ -11,7 +11,7 @@ def run_dual_sweep_stochastic(
     num_trials,
     alphas=[1, 3],
     lrs1=np.linspace(0.01, 0.6, 100),
-    lrs2=np.linspace(0.01, 0.6, 100[25:]),
+    lrs2=np.linspace(0.01, 0.6, 100)[25:],
 ):
     actions_over_time_all = np.zeros((T, 2, len(lrs1), len(lrs2), len(alphas)))
     # B1_over_time_all = np.zeros(
