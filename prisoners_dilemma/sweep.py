@@ -13,7 +13,6 @@ def run_dual_sweep_stochastic(
     lrs1=np.linspace(0.01, 0.6, 100)[50:],
     lrs2=np.linspace(0.01, 0.6, 100),
 ):
-    actions_over_time_all = np.zeros((T, 2, len(lrs1), len(lrs2), len(alphas)))
     # B1_over_time_all = np.zeros(
     #     (T, 4, 4, 2, 2, len(lrs1), len(lrs2), len(alphas), num_trials)
     # )
@@ -34,7 +33,6 @@ def run_dual_sweep_stochastic(
                 print(f"lr2 = : {lr_pB_2}")
 
                 collect = []
-
                 for t in range(num_trials):
 
                     alpha_1 = np.random.normal(alpha, 0.15)
@@ -51,9 +49,7 @@ def run_dual_sweep_stochastic(
                     )
                     collect.append(actions_over_time)
 
-                actions_over_time_all[:, :, k, j, a] = np.mean(
-                    np.array(collect), axis=0
-                )
+                actions_over_time_all = np.mean(np.array(collect), axis=0)
                 # B1_over_time_all[:, :, :, :, :, k, j, a, t] = B1_over_time
                 # q_pi_over_time_all[:, :, :, k, j, a, t] = q_pi_over_time
                 np.save(
