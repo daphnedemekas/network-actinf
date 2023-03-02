@@ -33,7 +33,7 @@ def construct_B():
     return B
 
 
-def get_agent_params():
+def get_agent_params(beta):
     """Returns standard parameters for a prisoners dilemma agent"""
     A = construct_A()
     # print_A(A)
@@ -41,7 +41,7 @@ def get_agent_params():
     # print_B(B)
 
     C = utils.obj_array(num_modalities)
-    C[0] = np.array([3, 1, 4, 2])
+    C[0] = np.array([beta*3, beta*1, beta*4, beta*2])
 
     D = utils.obj_array(num_factors)
 
@@ -54,9 +54,9 @@ def get_agent_params():
     return A, B, C, D, pB_1, pB_2
 
 
-def construct(lr_pB, lr_pB_2=None, factors_to_learn=None):
+def construct(lr_pB, lr_pB_2=None, beta=1,factors_to_learn=None):
     """Constructs two agents for the dual-agent simulation"""
-    A, B, C, D, pB_1, pB_2 = get_agent_params()
+    A, B, C, D, pB_1, pB_2 = get_agent_params(beta)
 
     agent_1 = Agent(
         A=A, B=B, C=C, D=D, pB=pB_1, lr_pB=lr_pB, factors_to_learn=factors_to_learn

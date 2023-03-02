@@ -3,7 +3,7 @@ import numpy as np
 from utils import *
 import os
 
-os.mkdir("stochastic")
+
 
 
 def run_dual_sweep_stochastic(
@@ -104,9 +104,5 @@ def run_dual_sweep_deterministic(
         np.save("q_pi_over_time_all", q_pi_over_time_all, allow_pickle=True)
 
 
-import argparse
-parser = argparse.ArgumentParser()
-parser.add_argument("task_id")
-args = parser.parse_args()
-
-run_dual_sweep_stochastic(2000, 100, args.task_id)
+for task_id in range(50,100):
+	run_dual_sweep_stochastic(2000, 100, task_id)
