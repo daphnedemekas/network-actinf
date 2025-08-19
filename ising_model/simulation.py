@@ -27,13 +27,15 @@ class Simulation:
             self.W = log_stable(omega_matrix / (1.0 - omega_matrix))
             self.W = self.W * self.A  # remove 0 edges, including self-loops
 
+        if p_s_vec is None:
+            p_s_vec = 0.5 * np.ones(self.N)
         self.theta = log_stable(p_s_vec / (1.0 - p_s_vec))
-        if not initial_posteriors:
+        if initial_posteriors is None:
             initial_posteriors = np.random.rand(
                 self.N
             )  # posterior is belief about belign in down state
         self.initial_posteriors = initial_posteriors
-        if not initial_spins:
+        if initial_spins is None:
             initial_spins = (self.initial_posteriors > 0.5).astype(
                 float
             )  # if spin == 1, you're in a DOWN spin, otherwise, you're in an UP sstate
